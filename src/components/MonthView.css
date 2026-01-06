@@ -1,0 +1,91 @@
+.month-view {
+  width: 100%;
+}
+
+.weekdays {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.weekday {
+  text-align: center;
+  font-size: 13px;
+  font-weight: 500;
+  color: #86868b;
+  padding: 8px 0;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.weekday.saturday {
+  color: #ff3b30; /* Красный для субботы */
+}
+
+.weekday.sunday {
+  color: #ff3b30; /* Красный для воскресенья */
+}
+
+.days-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 8px;
+}
+
+.day-cell {
+  aspect-ratio: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+}
+
+.day-cell:hover {
+  background: #f5f5f7;
+}
+
+.day-cell.other-month {
+  opacity: 0.3;
+}
+
+.day-cell.today {
+  background: #007aff;
+  color: #ffffff;
+}
+
+.day-cell.today .day-number {
+  color: #ffffff;
+  font-weight: 600;
+}
+
+.day-cell.saturday .day-number {
+  color: #ff3b30; /* Красный для субботы */
+}
+
+.day-cell.sunday .day-number {
+  color: #ff3b30; /* Красный для воскресенья */
+}
+
+.day-cell.other-month.saturday .day-number {
+  color: rgba(255, 59, 48, 0.3);
+}
+
+.day-cell.other-month.sunday .day-number {
+  color: rgba(255, 59, 48, 0.3);
+}
+
+.day-number {
+  font-size: 16px;
+  color: #1d1d1f;
+  font-weight: 400;
+}
+
+/* Текущий день должен оставаться с белым текстом на синем фоне */
+.day-cell.today .day-number {
+  color: #ffffff;
+}
+
