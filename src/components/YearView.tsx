@@ -71,6 +71,7 @@ const YearView: React.FC<YearViewProps> = ({ currentDate, onMonthClick }) => {
         <div className="mini-days-grid">
           {days.map((day, dayIndex) => {
             const isCurrentMonth = isSameMonth(day, monthDate)
+            const isCurrentDay = isToday(day)
             const dayOfWeek = day.getDay() // 0 = воскресенье, 6 = суббота
             const isSaturday = dayOfWeek === 6
             const isSunday = dayOfWeek === 0
@@ -78,7 +79,7 @@ const YearView: React.FC<YearViewProps> = ({ currentDate, onMonthClick }) => {
             return (
               <div
                 key={dayIndex}
-                className={`mini-day-cell ${!isCurrentMonth ? 'other-month' : ''} ${isSaturday ? 'saturday' : ''} ${isSunday ? 'sunday' : ''}`}
+                className={`mini-day-cell ${!isCurrentMonth ? 'other-month' : ''} ${isCurrentDay ? 'today' : ''} ${isSaturday ? 'saturday' : ''} ${isSunday ? 'sunday' : ''}`}
                 title={format(day, 'd MMMM yyyy', { locale: ru })}
               >
                 <span className="mini-day-number">{format(day, 'd')}</span>

@@ -122,7 +122,10 @@
 .day-cell.today {
   background: #007aff;
   color: #ffffff;
-  animation: todayPulse 0.6s ease-out;
+  position: relative;
+  box-shadow: 0 0 0 2px #ffffff, 0 0 0 4px #007aff, 0 4px 12px rgba(0, 122, 255, 0.4);
+  animation: todayPulse 0.6s ease-out, todayGlow 2s ease-in-out infinite;
+  z-index: 1;
 }
 
 @keyframes todayPulse {
@@ -130,10 +133,19 @@
     transform: scale(1);
   }
   50% {
-    transform: scale(1.1);
+    transform: scale(1.05);
   }
   100% {
     transform: scale(1);
+  }
+}
+
+@keyframes todayGlow {
+  0%, 100% {
+    box-shadow: 0 0 0 2px #ffffff, 0 0 0 4px #007aff, 0 4px 12px rgba(0, 122, 255, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 0 2px #ffffff, 0 0 0 4px #007aff, 0 4px 16px rgba(0, 122, 255, 0.6);
   }
 }
 
@@ -168,6 +180,22 @@
 /* Текущий день должен оставаться с белым текстом на синем фоне */
 .day-cell.today .day-number {
   color: #ffffff;
+  font-weight: 700;
+  position: relative;
+}
+
+/* Добавляем индикатор "сегодня" */
+.day-cell.today::after {
+  content: '';
+  position: absolute;
+  bottom: 2px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 4px;
+  height: 4px;
+  background: #ffffff;
+  border-radius: 50%;
+  box-shadow: 0 0 4px rgba(255, 255, 255, 0.8);
 }
 
 .day-cell.saturday .day-number {
