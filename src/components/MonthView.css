@@ -1,5 +1,48 @@
 .month-view {
   width: 100%;
+  animation: monthSlideIn 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes monthSlideIn {
+  from {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.month-view.slide-out {
+  animation: monthSlideOut 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes monthSlideOut {
+  from {
+    opacity: 1;
+    transform: translateX(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+}
+
+/* Анимация для дней при смене месяца */
+.days-grid {
+  animation: daysFadeIn 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes daysFadeIn {
+  0% {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .weekdays {
@@ -17,6 +60,7 @@
   padding: 8px 0;
   text-transform: uppercase;
   letter-spacing: 0.5px;
+  transition: color 0.3s ease;
 }
 
 .weekday.saturday {
@@ -31,6 +75,7 @@
   display: grid;
   grid-template-columns: repeat(7, 1fr);
   gap: 8px;
+  transition: all 0.3s ease;
 }
 
 .day-cell {
@@ -40,21 +85,56 @@
   justify-content: center;
   border-radius: 12px;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
+  animation: dayCellFadeIn 0.4s cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+
+@keyframes dayCellFadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 
 .day-cell:hover {
   background: #f5f5f7;
+  transform: scale(1.05);
+}
+
+.day-cell:active {
+  transform: scale(0.95);
 }
 
 .day-cell.other-month {
   opacity: 0.3;
+  transition: opacity 0.3s ease;
+}
+
+.day-cell.other-month:hover {
+  opacity: 0.5;
 }
 
 .day-cell.today {
   background: #007aff;
   color: #ffffff;
+  animation: todayPulse 0.6s ease-out;
+}
+
+@keyframes todayPulse {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.1);
+  }
+  100% {
+    transform: scale(1);
+  }
 }
 
 .day-cell.today .day-number {
@@ -82,10 +162,19 @@
   font-size: 16px;
   color: #1d1d1f;
   font-weight: 400;
+  transition: color 0.3s ease, font-weight 0.3s ease;
 }
 
 /* Текущий день должен оставаться с белым текстом на синем фоне */
 .day-cell.today .day-number {
   color: #ffffff;
+}
+
+.day-cell.saturday .day-number {
+  transition: color 0.3s ease;
+}
+
+.day-cell.sunday .day-number {
+  transition: color 0.3s ease;
 }
 

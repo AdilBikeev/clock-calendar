@@ -47,6 +47,9 @@ const YearView: React.FC<YearViewProps> = ({ currentDate, onMonthClick }) => {
         key={getMonth(monthDate)} 
         className={`mini-month ${isSelectedMonth ? 'selected-month' : ''}`}
         onClick={() => handleMonthClick(monthDate)}
+        style={{
+          animationDelay: `${getMonth(monthDate) * 0.03}s`
+        }}
       >
         <div className="mini-month-title">
           {format(monthDate, 'LLLL', { locale: ru })}

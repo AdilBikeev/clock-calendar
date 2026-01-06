@@ -53,6 +53,9 @@ const MonthView: React.FC<MonthViewProps> = ({ currentDate }) => {
             <div
               key={index}
               className={`day-cell ${!isCurrentMonth ? 'other-month' : ''} ${isCurrentDay ? 'today' : ''} ${isSaturday ? 'saturday' : ''} ${isSunday ? 'sunday' : ''}`}
+              style={{
+                animationDelay: `${index * 0.01}s`
+              }}
             >
               <span className="day-number">{format(day, 'd')}</span>
             </div>

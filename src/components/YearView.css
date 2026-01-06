@@ -1,6 +1,33 @@
 .year-view {
   width: 100%;
   overflow: hidden;
+  animation: yearFadeIn 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes yearFadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95) translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.year-view.slide-out {
+  animation: yearFadeOut 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes yearFadeOut {
+  from {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: scale(0.95) translateY(-10px);
+  }
 }
 
 .year-grid {
@@ -10,6 +37,18 @@
   gap: 12px;
   width: 100%;
   height: 100%;
+  animation: yearGridFadeIn 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes yearGridFadeIn {
+  0% {
+    opacity: 0;
+    transform: scale(0.98);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 
 .mini-month {
@@ -19,17 +58,50 @@
   display: flex;
   flex-direction: column;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
+  border: 2px solid transparent;
+  animation: miniMonthFadeIn 0.5s cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+
+@keyframes miniMonthFadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.9) translateY(5px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
 }
 
 .mini-month:hover {
-  background: rgba(0, 0, 0, 0.02);
+  background: rgba(0, 0, 0, 0.03);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.mini-month:active {
+  transform: translateY(0);
 }
 
 .mini-month.selected-month {
   border: 2px solid #007aff;
-  background: rgba(0, 122, 255, 0.05);
+  background: rgba(0, 122, 255, 0.08);
+  box-shadow: 0 2px 8px rgba(0, 122, 255, 0.2);
+  animation: selectedMonthGlow 0.5s ease-out;
+}
+
+@keyframes selectedMonthGlow {
+  0% {
+    box-shadow: 0 2px 8px rgba(0, 122, 255, 0.2);
+  }
+  50% {
+    box-shadow: 0 4px 16px rgba(0, 122, 255, 0.4);
+  }
+  100% {
+    box-shadow: 0 2px 8px rgba(0, 122, 255, 0.2);
+  }
 }
 
 .mini-month-title {
@@ -39,6 +111,12 @@
   color: #1d1d1f;
   margin-bottom: 6px;
   text-transform: capitalize;
+  transition: color 0.3s ease, font-weight 0.3s ease;
+}
+
+.mini-month.selected-month .mini-month-title {
+  color: #007aff;
+  font-weight: 600;
 }
 
 .mini-weekdays {
@@ -54,6 +132,7 @@
   font-weight: 400;
   color: #86868b;
   padding: 1px 0;
+  transition: color 0.3s ease;
 }
 
 .mini-weekday.saturday {
@@ -77,17 +156,27 @@
   justify-content: center;
   border-radius: 3px;
   cursor: pointer;
-  transition: all 0.15s ease;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
   min-height: 20px;
 }
 
 .mini-day-cell:hover {
   background: #e8e8ed;
+  transform: scale(1.1);
+}
+
+.mini-day-cell:active {
+  transform: scale(0.95);
 }
 
 .mini-day-cell.other-month {
   opacity: 0.2;
+  transition: opacity 0.3s ease;
+}
+
+.mini-day-cell.other-month:hover {
+  opacity: 0.35;
 }
 
 
@@ -111,10 +200,16 @@
   font-size: 11px;
   color: #1d1d1f;
   font-weight: 400;
+  transition: color 0.3s ease, font-weight 0.3s ease;
 }
 
 .mini-day-cell.other-month .mini-day-number {
   color: rgba(29, 29, 31, 0.2);
+}
+
+.mini-day-cell.saturday .mini-day-number,
+.mini-day-cell.sunday .mini-day-number {
+  transition: color 0.3s ease;
 }
 
 /* Компактный вид для мобильных устройств */

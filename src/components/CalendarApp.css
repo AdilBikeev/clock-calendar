@@ -5,10 +5,24 @@
   padding: 30px;
   width: 100%;
   max-width: 800px;
+  transition: all 0.3s ease;
+  animation: fadeIn 0.4s ease-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .calendar-header {
   margin-bottom: 30px;
+  transition: all 0.3s ease;
 }
 
 @media (max-width: 768px) {
@@ -72,6 +86,43 @@
   text-transform: capitalize;
   min-width: 200px;
   text-align: center;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  animation: titleSlide 0.4s ease-out;
+}
+
+@keyframes titleSlide {
+  from {
+    opacity: 0;
+    transform: translateX(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* Анимация заголовка при смене месяца/года */
+.calendar-title.changing {
+  animation: titleChange 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes titleChange {
+  0% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  50% {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  51% {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .nav-button {
@@ -103,9 +154,22 @@
   width: 100%;
   overflow: hidden;
   touch-action: pan-y;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  animation: contentFadeIn 0.4s ease-out;
 }
 
 .calendar-content:has(.year-view) {
   overflow: visible;
+}
+
+@keyframes contentFadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 
