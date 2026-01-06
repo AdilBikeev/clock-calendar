@@ -14,9 +14,10 @@ import './MonthView.css'
 
 interface MonthViewProps {
   currentDate: Date
+  onDayClick?: (date: Date) => void
 }
 
-const MonthView: React.FC<MonthViewProps> = ({ currentDate }) => {
+const MonthView: React.FC<MonthViewProps> = ({ currentDate, onDayClick }) => {
   const monthStart = startOfMonth(currentDate)
   const monthEnd = endOfMonth(currentDate)
   const calendarStart = startOfWeek(monthStart, { locale: ru })
@@ -24,6 +25,13 @@ const MonthView: React.FC<MonthViewProps> = ({ currentDate }) => {
 
   const days = eachDayOfInterval({ start: calendarStart, end: calendarEnd })
   const weekDays: string[] = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс']
+
+  const handleDayClick = (day: Date, isCurrentMonth: boolean): void => {
+    if (!isCurrentMonth && onDayClick) {
+      // При клике на день другого месяца переключаемся на этот месяц
+      onDayClick(startOfMonth(day))
+    }
+  }
 
   return (
     <div className="month-view">
@@ -56,6 +64,7 @@ const MonthView: React.FC<MonthViewProps> = ({ currentDate }) => {
               style={{
                 animationDelay: `${index * 0.01}s`
               }}
+              onClick={() => handleDayClick(day, isCurrentMonth)}
             >
               <span className="day-number">{format(day, 'd')}</span>
             </div>

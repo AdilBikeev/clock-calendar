@@ -138,7 +138,10 @@ const CalendarApp: React.FC = () => {
         {viewMode === 'month' ? (
           <MonthView 
             key={`month-${currentDate.getFullYear()}-${currentDate.getMonth()}`}
-            currentDate={currentDate} 
+            currentDate={currentDate}
+            onDayClick={(monthDate: Date) => {
+              setCurrentDate(monthDate)
+            }}
           />
         ) : (
           <YearView 

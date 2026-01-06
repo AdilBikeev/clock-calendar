@@ -113,8 +113,12 @@
 .day-cell.other-month {
   opacity: 0.5;
   transition: all 0.3s ease;
-  pointer-events: none;
-  cursor: default;
+  cursor: pointer;
+}
+
+.day-cell.other-month:hover {
+  opacity: 0.7;
+  background: rgba(0, 0, 0, 0.03);
 }
 
 .day-cell.other-month .day-number {
