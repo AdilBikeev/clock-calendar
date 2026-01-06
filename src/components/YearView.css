@@ -18,6 +18,18 @@
   padding: 8px 4px;
   display: flex;
   flex-direction: column;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+}
+
+.mini-month:hover {
+  background: rgba(0, 0, 0, 0.02);
+}
+
+.mini-month.selected-month {
+  border: 2px solid #007aff;
+  background: rgba(0, 122, 255, 0.05);
 }
 
 .mini-month-title {
@@ -78,15 +90,6 @@
   opacity: 0.2;
 }
 
-.mini-day-cell.today {
-  border: 1px solid #1d1d1f;
-  background: transparent;
-}
-
-.mini-day-cell.today .mini-day-number {
-  color: #1d1d1f;
-  font-weight: 500;
-}
 
 .mini-day-cell.saturday .mini-day-number {
   color: #ff3b30; /* Красный для субботы */
