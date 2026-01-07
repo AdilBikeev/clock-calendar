@@ -7,17 +7,22 @@ import {
   eachDayOfInterval,
   format,
   isSameMonth,
-  isToday
+  isToday,
+  isSameDay
 } from 'date-fns'
 import { ru } from 'date-fns/locale'
+import { Event } from '../types/event'
 import './MonthView.css'
 
 interface MonthViewProps {
   currentDate: Date
-  onDayClick?: (date: Date) => void
+  events: Event[]
+  highlightedDate?: Date | null
+  onDayClick?: (date: Date, isOtherMonth: boolean) => void
+  onEventClick?: (event: Event) => void
 }
 
-const MonthView: React.FC<MonthViewProps> = ({ currentDate, onDayClick }) => {
+const MonthView: React.FC<MonthViewProps> = ({ currentDate, events, highlightedDate, onDayClick, onEventClick }) => {
   const monthStart = startOfMonth(currentDate)
   const monthEnd = endOfMonth(currentDate)
   const calendarStart = startOfWeek(monthStart, { locale: ru })
@@ -26,10 +31,20 @@ const MonthView: React.FC<MonthViewProps> = ({ currentDate, onDayClick }) => {
   const days = eachDayOfInterval({ start: calendarStart, end: calendarEnd })
   const weekDays: string[] = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс']
 
+  const getDayEvents = (day: Date): Event[] => {
+    return events.filter(event => {
+      const eventStart = new Date(event.startDate)
+      return isSameDay(eventStart, day)
+    })
+  }
+
   const handleDayClick = (day: Date, isCurrentMonth: boolean): void => {
     if (!isCurrentMonth && onDayClick) {
       // При клике на день другого месяца переключаемся на этот месяц
-      onDayClick(startOfMonth(day))
+      onDayClick(startOfMonth(day), true)
+    } else if (isCurrentMonth && onDayClick) {
+      // При клике на день текущего месяца открываем модальное окно
+      onDayClick(day, false)
     }
   }
 
@@ -53,20 +68,43 @@ const MonthView: React.FC<MonthViewProps> = ({ currentDate, onDayClick }) => {
         {days.map((day, index) => {
           const isCurrentMonth = isSameMonth(day, currentDate)
           const isCurrentDay = isToday(day)
+          const isHighlighted = highlightedDate && isSameDay(day, highlightedDate)
           const dayOfWeek = day.getDay() // 0 = воскресенье, 6 = суббота
           const isSaturday = dayOfWeek === 6
           const isSunday = dayOfWeek === 0
+          const dayEvents = getDayEvents(day)
           
           return (
             <div
               key={index}
-              className={`day-cell ${!isCurrentMonth ? 'other-month' : ''} ${isCurrentDay ? 'today' : ''} ${isSaturday ? 'saturday' : ''} ${isSunday ? 'sunday' : ''}`}
+              className={`day-cell ${!isCurrentMonth ? 'other-month' : ''} ${isCurrentDay ? 'today' : ''} ${isHighlighted ? 'highlighted' : ''} ${isSaturday ? 'saturday' : ''} ${isSunday ? 'sunday' : ''}`}
               style={{
                 animationDelay: `${index * 0.01}s`
               }}
               onClick={() => handleDayClick(day, isCurrentMonth)}
             >
               <span className="day-number">{format(day, 'd')}</span>
+              {dayEvents.length > 0 && (
+                <div className="day-events-indicators">
+                  {dayEvents.slice(0, 3).map((event) => (
+                    <div
+                      key={event.id}
+                      className="day-event-dot"
+                      style={{ backgroundColor: event.color }}
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        if (onEventClick) {
+                          onEventClick(event)
+                        }
+                      }}
+                      title={event.title}
+                    />
+                  ))}
+                  {dayEvents.length > 3 && (
+                    <div className="day-event-more">+{dayEvents.length - 3}</div>
+                  )}
+                </div>
+              )}
             </div>
           )
         })}
