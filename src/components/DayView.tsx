@@ -36,29 +36,52 @@ const DayView: React.FC<DayViewProps> = ({ currentDate, events, onEventClick, hi
   // Автоматическая прокрутка к сфокусированному событию в списке
   useEffect(() => {
     if (focusedEventId) {
-      // Используем setTimeout, чтобы убедиться, что DOM обновлен
-      setTimeout(() => {
-        const eventElement = document.querySelector(`[data-event-id="${focusedEventId}"]`) as HTMLElement
-        const eventsList = document.querySelector('.day-events-list') as HTMLElement
-        if (eventElement && eventsList) {
-          const elementRect = eventElement.getBoundingClientRect()
-          const containerRect = eventsList.getBoundingClientRect()
-          
-          // Проверяем, полностью ли виден элемент
-          const isFullyVisible = 
-            elementRect.top >= containerRect.top &&
-            elementRect.bottom <= containerRect.bottom
-          
-          // Если элемент не полностью виден, прокручиваем к нему
-          if (!isFullyVisible) {
-            eventElement.scrollIntoView({
-              behavior: 'smooth',
-              block: 'center', // Центрируем элемент в видимой области
-              inline: 'nearest'
-            })
+      // Используем requestAnimationFrame и setTimeout для надежной прокрутки
+      requestAnimationFrame(() => {
+        setTimeout(() => {
+          const eventElement = document.querySelector(`[data-event-id="${focusedEventId}"]`) as HTMLElement
+          if (eventElement) {
+            // Ищем скроллируемый контейнер SimpleBar
+            let scrollContainer: HTMLElement | null = null
+            
+            // Ищем родительский элемент с классом simplebar-content-wrapper
+            let parent: HTMLElement | null = eventElement.parentElement
+            while (parent) {
+              if (parent.classList.contains('simplebar-content-wrapper')) {
+                scrollContainer = parent
+                break
+              }
+              parent = parent.parentElement
+            }
+            
+            if (scrollContainer) {
+              const elementRect = eventElement.getBoundingClientRect()
+              const containerRect = scrollContainer.getBoundingClientRect()
+              
+              // Вычисляем позицию элемента относительно контейнера
+              const elementTop = elementRect.top - containerRect.top + scrollContainer.scrollTop
+              const elementCenter = elementTop + (elementRect.height / 2)
+              const containerCenter = scrollContainer.clientHeight / 2
+              
+              // Вычисляем нужную позицию прокрутки
+              const targetScrollTop = elementCenter - containerCenter
+              
+              // Прокручиваем к элементу
+              scrollContainer.scrollTo({
+                top: Math.max(0, targetScrollTop),
+                behavior: 'smooth'
+              })
+            } else {
+              // Fallback на обычный scrollIntoView
+              eventElement.scrollIntoView({
+                behavior: 'smooth',
+                block: 'center',
+                inline: 'nearest'
+              })
+            }
           }
-        }
-      }, 100)
+        }, 150)
+      })
     }
   }, [focusedEventId])
 
