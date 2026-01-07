@@ -19,3 +19,4 @@ export const EVENT_COLORS: string[] = [
   '#ff2d55', // Розовый
 ]
 
+
