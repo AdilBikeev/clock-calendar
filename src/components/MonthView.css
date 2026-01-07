@@ -157,6 +157,7 @@
   margin-top: 4px;
   flex-wrap: wrap;
   max-width: 100%;
+  pointer-events: auto;
 }
 
 .day-event-dot {
@@ -208,6 +209,7 @@
   font-weight: 500;
   color: #1d1d1f;
   transition: all 0.2s ease;
+  pointer-events: none;
 }
 
 .day-cell.saturday .day-number,

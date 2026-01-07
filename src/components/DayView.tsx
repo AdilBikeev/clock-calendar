@@ -1,12 +1,16 @@
-import React, { useState, useEffect } from 'react'
-import { isSameDay } from 'date-fns'
+import React, { useState, useEffect, useMemo } from 'react'
+import { isSameDay, startOfDay, endOfDay, format } from 'date-fns'
+import { ru } from 'date-fns/locale'
+import { Event } from '../types/event'
 import './DayView.css'
 
 interface DayViewProps {
   currentDate: Date
+  events: Event[]
+  onEventClick?: (event: Event) => void
 }
 
-const DayView: React.FC<DayViewProps> = ({ currentDate }) => {
+const DayView: React.FC<DayViewProps> = ({ currentDate, events, onEventClick }) => {
   const [currentTime, setCurrentTime] = useState<Date>(new Date())
 
 
@@ -51,6 +55,49 @@ const DayView: React.FC<DayViewProps> = ({ currentDate }) => {
   const hourAngle = hours12 === 12 ? -90 : (hours12 * 30 + minutes * 0.5) - 90
   const minuteAngle = (minutes * 6) - 90
   const secondAngle = (seconds * 6) - 90
+
+  // Получаем и сортируем события для выбранного дня
+  const dayEvents = useMemo(() => {
+    const dayStart = startOfDay(currentDate)
+    const dayEnd = endOfDay(currentDate)
+
+    // Фильтруем события, которые пересекаются с выбранным днем
+    const filteredEvents = events.filter(event => {
+      const eventStart = new Date(event.startDate)
+      const eventEnd = new Date(event.endDate)
+      
+      // Событие попадает в день, если оно начинается до конца дня и заканчивается после начала дня
+      return eventStart <= dayEnd && eventEnd >= dayStart
+    })
+
+    // Сортируем события
+    return filteredEvents.sort((a, b) => {
+      const aStart = new Date(a.startDate)
+      const aEnd = new Date(a.endDate)
+      const bStart = new Date(b.startDate)
+      const bEnd = new Date(b.endDate)
+      
+      // Проверяем, заканчивается ли событие в другой день
+      const aEndsOtherDay = !isSameDay(aEnd, currentDate)
+      const bEndsOtherDay = !isSameDay(bEnd, currentDate)
+      
+      // Приоритет: события, которые заканчиваются в другой день
+      if (aEndsOtherDay && !bEndsOtherDay) return -1
+      if (!aEndsOtherDay && bEndsOtherDay) return 1
+      
+      // Затем события на весь день
+      if (a.allDay && !b.allDay) return -1
+      if (!a.allDay && b.allDay) return 1
+      
+      // Остальные сортируются по времени начала
+      return aStart.getTime() - bStart.getTime()
+    })
+  }, [events, currentDate])
+
+  // Форматируем время для отображения
+  const formatTime = (date: Date): string => {
+    return format(date, 'HH:mm', { locale: ru })
+  }
 
   return (
     <div className="day-view">
@@ -152,6 +199,47 @@ const DayView: React.FC<DayViewProps> = ({ currentDate }) => {
             />
           </svg>
         </div>
+      </div>
+
+      {/* Список событий */}
+      <div className="day-events-list">
+        {dayEvents.length === 0 ? (
+          <div className="day-events-empty">Нет событий на этот день</div>
+        ) : (
+          dayEvents.map(event => {
+            const eventStart = new Date(event.startDate)
+            const eventEnd = new Date(event.endDate)
+            const isAllDay = event.allDay
+            const endsOtherDay = !isSameDay(eventEnd, currentDate)
+            
+              return (
+              <div 
+                key={event.id} 
+                className={`day-event-item ${isAllDay || endsOtherDay ? 'all-day' : ''}`}
+                onClick={() => {
+                  if (onEventClick) {
+                    onEventClick(event)
+                  }
+                }}
+              >
+                <div 
+                  className="day-event-color-dot" 
+                  style={{ backgroundColor: event.color }}
+                />
+                <div className="day-event-content">
+                  <div className="day-event-title">{event.title}</div>
+                  {isAllDay ? (
+                    <div className="day-event-time">Весь день</div>
+                  ) : (
+                    <div className="day-event-time">
+                      {formatTime(eventStart)} - {formatTime(eventEnd)}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )
+          })
+        )}
       </div>
     </div>
   )

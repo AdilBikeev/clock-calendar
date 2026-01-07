@@ -19,10 +19,9 @@ interface MonthViewProps {
   events: Event[]
   highlightedDate?: Date | null
   onDayClick?: (date: Date, isOtherMonth: boolean) => void
-  onEventClick?: (event: Event) => void
 }
 
-const MonthView: React.FC<MonthViewProps> = ({ currentDate, events, highlightedDate, onDayClick, onEventClick }) => {
+const MonthView: React.FC<MonthViewProps> = ({ currentDate, events, highlightedDate, onDayClick }) => {
   const monthStart = startOfMonth(currentDate)
   const monthEnd = endOfMonth(currentDate)
   const calendarStart = startOfWeek(monthStart, { locale: ru })
@@ -40,13 +39,8 @@ const MonthView: React.FC<MonthViewProps> = ({ currentDate, events, highlightedD
 
   const handleDayClick = (day: Date, isCurrentMonth: boolean): void => {
     if (onDayClick) {
-      if (!isCurrentMonth) {
-        // При клике на день другого месяца переключаемся на этот месяц
-        onDayClick(startOfMonth(day), true)
-      } else {
-        // При клике на день текущего месяца - открываем представление "День"
-        onDayClick(day, false)
-      }
+      // При клике на любой день - открываем представление "День" для этого дня
+      onDayClick(day, !isCurrentMonth)
     }
   }
 
@@ -83,7 +77,16 @@ const MonthView: React.FC<MonthViewProps> = ({ currentDate, events, highlightedD
               style={{
                 animationDelay: `${index * 0.01}s`
               }}
-              onClick={() => handleDayClick(day, isCurrentMonth)}
+              onClick={(e) => {
+                // Проверяем, что клик не по маркеру события
+                const target = e.target as HTMLElement
+                // Если клик по маркеру события - игнорируем
+                if (target.closest('.day-event-dot') || target.closest('.day-event-more')) {
+                  return
+                }
+                // Остальные клики обрабатываем - открываем представление "День"
+                handleDayClick(day, isCurrentMonth)
+              }}
             >
               <span className="day-number">{format(day, 'd')}</span>
               {dayEvents.length > 0 && (
@@ -93,17 +96,21 @@ const MonthView: React.FC<MonthViewProps> = ({ currentDate, events, highlightedD
                       key={event.id}
                       className="day-event-dot"
                       style={{ backgroundColor: event.color }}
+                      title={event.title}
                       onClick={(e) => {
                         e.stopPropagation()
-                        if (onEventClick) {
-                          onEventClick(event)
-                        }
                       }}
-                      title={event.title}
                     />
                   ))}
                   {dayEvents.length > 3 && (
-                    <div className="day-event-more">+{dayEvents.length - 3}</div>
+                    <div 
+                      className="day-event-more"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                      }}
+                    >
+                      +{dayEvents.length - 3}
+                    </div>
                   )}
                 </div>
               )}

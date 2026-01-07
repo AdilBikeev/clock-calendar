@@ -196,21 +196,25 @@ const CalendarApp: React.FC = () => {
   }
 
   const handleDayClick = (date: Date, isOtherMonth: boolean): void => {
-    if (isOtherMonth) {
-      // Переключение на другой месяц
-      setCurrentDate(startOfMonth(date))
-      setHighlightedDate(null)
-    } else {
-      // При клике на день текущего месяца - открываем представление "День"
-      setCurrentDate(date)
-      setViewMode('day')
-    }
+    // При клике на любой день - открываем представление "День" для этого дня
+    setCurrentDate(date)
+    setViewMode('day')
   }
 
   const handleCreateEvent = (): void => {
-    const today = new Date()
-    today.setHours(0, 0, 0, 0)
-    setSelectedDate(today)
+    let defaultDate: Date
+    
+    if (viewMode === 'day') {
+      // Если находимся в представлении "День", используем выбранный день
+      defaultDate = new Date(currentDate)
+      defaultDate.setHours(0, 0, 0, 0)
+    } else {
+      // Иначе используем текущий день
+      defaultDate = new Date()
+      defaultDate.setHours(0, 0, 0, 0)
+    }
+    
+    setSelectedDate(defaultDate)
     setSelectedEvent(null)
     setHighlightedDate(null)
     setIsModalOpen(true)
@@ -259,18 +263,35 @@ const CalendarApp: React.FC = () => {
       setEvents([...events, newEvent])
     }
 
-    // Устанавливаем дату на день события и переключаемся на месячный вид
+    // Обновляем представление в зависимости от текущего режима просмотра
     const eventDate = new Date(event.startDate)
-    setCurrentDate(startOfMonth(eventDate))
-    setViewMode('month')
     
-    // Выделяем день с событием
-    setHighlightedDate(eventDate)
-
-    // Очищаем выделение через 3 секунды
-    setTimeout(() => {
-      setHighlightedDate(null)
-    }, 3000)
+    if (viewMode === 'month') {
+      // Если находимся в месячном представлении, обновляем месяц только если событие в другом месяце
+      const eventMonth = startOfMonth(eventDate)
+      const currentMonth = startOfMonth(currentDate)
+      if (eventMonth.getTime() !== currentMonth.getTime()) {
+        setCurrentDate(eventMonth)
+      }
+      // Выделяем день с событием
+      setHighlightedDate(eventDate)
+      // Очищаем выделение через 3 секунды
+      setTimeout(() => {
+        setHighlightedDate(null)
+      }, 3000)
+    } else if (viewMode === 'day') {
+      // Если находимся в дневном представлении, обновляем день только если событие в другой день
+      if (!isSameDay(eventDate, currentDate)) {
+        setCurrentDate(eventDate)
+      }
+    } else if (viewMode === 'year') {
+      // Если находимся в годовом представлении, обновляем год только если событие в другом году
+      const eventYear = eventDate.getFullYear()
+      const currentYear = currentDate.getFullYear()
+      if (eventYear !== currentYear) {
+        setCurrentDate(new Date(eventYear, 0, 1))
+      }
+    }
 
     // Закрываем модальное окно
     setIsModalOpen(false)
@@ -359,7 +380,6 @@ const CalendarApp: React.FC = () => {
             events={events}
             highlightedDate={highlightedDate}
             onDayClick={handleDayClick}
-            onEventClick={handleEventClick}
           />
         ) : viewMode === 'year' ? (
           <YearView 
@@ -374,6 +394,8 @@ const CalendarApp: React.FC = () => {
           <DayView 
             key={`day-${currentDate.getFullYear()}-${currentDate.getMonth()}-${currentDate.getDate()}`}
             currentDate={currentDate}
+            events={events}
+            onEventClick={handleEventClick}
           />
         )}
       </div>

@@ -51,10 +51,8 @@ const EventModal: React.FC<EventModalProps> = ({
       date.setHours(0, 0, 0, 0)
       const startDateStr = format(date, 'yyyy-MM-dd')
       
-      // День окончания - следующий день
-      const endDate = new Date(date)
-      endDate.setDate(endDate.getDate() + 1)
-      const endDateStr = format(endDate, 'yyyy-MM-dd')
+      // Дата окончания такая же, как дата начала
+      const endDateStr = startDateStr
       
       setTitle('')
       setDescription('')
@@ -62,7 +60,7 @@ const EventModal: React.FC<EventModalProps> = ({
       setStartDate(startDateStr)
       setStartTime('09:00')
       setEndDate(endDateStr)
-      setEndTime('10:00')
+      setEndTime('10:00') // На 1 час позже времени начала
     }
   }, [event, selectedDate])
 
@@ -209,6 +207,9 @@ const EventModal: React.FC<EventModalProps> = ({
                       setStartDate(e.target.value)
                       if (allDay) {
                         // При изменении даты начала для событий "Весь день" обновляем дату окончания
+                        setEndDate(e.target.value)
+                      } else {
+                        // Для обычных событий также обновляем дату окончания на ту же дату
                         setEndDate(e.target.value)
                       }
                     }}
