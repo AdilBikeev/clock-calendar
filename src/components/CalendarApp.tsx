@@ -1,12 +1,14 @@
 import React, { useState, useRef, useEffect } from 'react'
 import { format, isSameDay, startOfMonth } from 'date-fns'
 import { ru } from 'date-fns/locale'
+import SimpleBar from 'simplebar-react'
 import MonthView from './MonthView'
 import YearView from './YearView'
 import DayView from './DayView'
 import NavigationBar from './NavigationBar'
 import EventModal from './EventModal'
 import { Event, EVENT_COLORS } from '../types/event'
+import 'simplebar-react/dist/simplebar.min.css'
 import './CalendarApp.css'
 
 type ViewMode = 'month' | 'year' | 'day'
@@ -25,9 +27,11 @@ const CalendarApp: React.FC = () => {
   const [selectedEvent, setSelectedEvent] = useState<Event | null>(null)
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false)
   const [highlightedDate, setHighlightedDate] = useState<Date | null>(null)
+  const [focusedEventId, setFocusedEventId] = useState<string | null>(null)
   const swipeRef = useRef<SwipeRef>({ startX: 0, startY: 0, isDragging: false })
   const calendarAppRef = useRef<HTMLDivElement>(null)
   const calendarContentRef = useRef<HTMLDivElement>(null)
+  const [isEventsLoaded, setIsEventsLoaded] = useState<boolean>(false)
 
   // Загрузка событий из localStorage
   useEffect(() => {
@@ -35,31 +39,103 @@ const CalendarApp: React.FC = () => {
     if (savedEvents) {
       try {
         const parsed = JSON.parse(savedEvents)
-        const eventsWithDates = parsed.map((e: any) => ({
-          ...e,
-          startDate: new Date(e.startDate),
-          endDate: new Date(e.endDate)
-        }))
+        const eventsWithDates = parsed.map((e: any) => {
+          // При загрузке из JSON, даты сохраняются в формате "YYYY-MM-DDTHH:mm:ss" (локальное время, без 'Z')
+          // JavaScript может интерпретировать строку без 'Z' как UTC или локальное время в зависимости от браузера
+          // Поэтому явно парсим строку и создаем Date с локальным временем
+          const parseLocalDateTime = (dateStr: string): Date => {
+            // Формат: "2026-01-07T23:00:00"
+            const parts = dateStr.split('T')
+            if (parts.length === 2) {
+              const [datePart, timePart] = parts
+              const [year, month, day] = datePart.split('-').map(Number)
+              const [hour, minute, second = 0] = timePart.split(':').map(Number)
+              // Создаем Date с локальным временем (месяц в Date начинается с 0)
+              return new Date(year, month - 1, day, hour, minute, second, 0)
+            }
+            // Если формат не подошел, используем стандартный парсинг
+            return new Date(dateStr)
+          }
+          
+          let startDate: Date
+          let endDate: Date
+          
+          if (typeof e.startDate === 'string') {
+            startDate = parseLocalDateTime(e.startDate)
+          } else {
+            startDate = new Date(e.startDate)
+          }
+          
+          if (typeof e.endDate === 'string') {
+            endDate = parseLocalDateTime(e.endDate)
+          } else {
+            endDate = new Date(e.endDate)
+          }
+          
+          return {
+            ...e,
+            startDate,
+            endDate
+          }
+        })
         setEvents(eventsWithDates)
       } catch (error) {
         console.error('Error loading events:', error)
       }
     }
+    // Отмечаем, что загрузка завершена
+    setIsEventsLoaded(true)
   }, [])
 
-  // Сохранение событий в localStorage
+  // Сохранение событий в localStorage (только после загрузки)
   useEffect(() => {
-    if (events.length > 0 || localStorage.getItem('calendar-events')) {
-      localStorage.setItem('calendar-events', JSON.stringify(events))
+    // Не сохраняем, пока не загрузили данные из localStorage
+    if (!isEventsLoaded) {
+      return
     }
-  }, [events])
+    
+    if (events.length > 0 || localStorage.getItem('calendar-events')) {
+      // Сериализуем события, сохраняя локальное время правильно
+      const serializedEvents = events.map(e => {
+        const serializeDate = (date: Date): string => {
+          // Сохраняем дату в формате, который сохраняет локальное время
+          // Формат: "YYYY-MM-DDTHH:mm:ss" (без 'Z', что означает локальное время)
+          const year = date.getFullYear()
+          const month = String(date.getMonth() + 1).padStart(2, '0')
+          const day = String(date.getDate()).padStart(2, '0')
+          const hours = String(date.getHours()).padStart(2, '0')
+          const minutes = String(date.getMinutes()).padStart(2, '0')
+          const seconds = String(date.getSeconds()).padStart(2, '0')
+          return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}`
+        }
+        
+        return {
+          ...e,
+          startDate: e.startDate instanceof Date 
+            ? serializeDate(e.startDate) 
+            : e.startDate,
+          endDate: e.endDate instanceof Date 
+            ? serializeDate(e.endDate) 
+            : e.endDate
+        }
+      })
+      localStorage.setItem('calendar-events', JSON.stringify(serializedEvents))
+    }
+  }, [events, isEventsLoaded])
 
-  // Автоматическое масштабирование контента если он не помещается
+  // Автоматическое масштабирование контента если он не помещается (кроме day-view, где используется прокрутка)
   useEffect(() => {
     const adjustScale = (): void => {
       const app = calendarAppRef.current
       const content = calendarContentRef.current
       if (!app || !content) return
+
+      // Не применяем масштабирование для day-view, там используется прокрутка
+      if (viewMode === 'day') {
+        content.style.transform = ''
+        content.style.transformOrigin = ''
+        return
+      }
 
       const header = app.querySelector('.calendar-header') as HTMLElement
       const headerHeight = header?.offsetHeight || 0
@@ -224,6 +300,9 @@ const CalendarApp: React.FC = () => {
     setSelectedEvent(event)
     setSelectedDate(null)
     setIsModalOpen(true)
+    setFocusedEventId(event.id)
+    // Сохраняем ID события для фокуса в DayView
+    setHighlightedDate(new Date(event.startDate))
   }
 
   const handleSaveEvent = (event: Event): void => {
@@ -304,13 +383,32 @@ const CalendarApp: React.FC = () => {
     setIsModalOpen(false)
     setSelectedDate(null)
     setSelectedEvent(null)
+    setFocusedEventId(null)
   }
 
   const handleCloseModal = (): void => {
     setIsModalOpen(false)
     setSelectedDate(null)
-    setSelectedEvent(null)
+    // selectedEvent не сбрасываем сразу, чтобы сохранить фокус в DayView
+    // Он будет сброшен при изменении представления или даты
   }
+
+  // Сбрасываем фокус при изменении представления или даты
+  useEffect(() => {
+    if (viewMode !== 'day') {
+      setFocusedEventId(null)
+      setSelectedEvent(null)
+      setHighlightedDate(null)
+    }
+  }, [viewMode])
+
+  useEffect(() => {
+    if (viewMode === 'day') {
+      // При изменении дня в day view - сбрасываем фокус
+      setFocusedEventId(null)
+      setSelectedEvent(null)
+    }
+  }, [currentDate])
 
   const monthTitle = format(currentDate, 'LLLL yyyy', { locale: ru })
   const yearTitle = format(currentDate, 'yyyy', { locale: ru })
@@ -382,20 +480,23 @@ const CalendarApp: React.FC = () => {
             onDayClick={handleDayClick}
           />
         ) : viewMode === 'year' ? (
-          <YearView 
-            key={`year-${currentDate.getFullYear()}`}
-            currentDate={currentDate} 
-            onMonthClick={(monthDate: Date) => {
-              setCurrentDate(monthDate)
-              setViewMode('month')
-            }}
-          />
+          <SimpleBar style={{ maxHeight: '100%', flex: '1 1 auto', minHeight: 0 }}>
+            <YearView 
+              key={`year-${currentDate.getFullYear()}`}
+              currentDate={currentDate} 
+              onMonthClick={(monthDate: Date) => {
+                setCurrentDate(monthDate)
+                setViewMode('month')
+              }}
+            />
+          </SimpleBar>
         ) : (
           <DayView 
             key={`day-${currentDate.getFullYear()}-${currentDate.getMonth()}-${currentDate.getDate()}`}
             currentDate={currentDate}
             events={events}
             onEventClick={handleEventClick}
+            highlightedEventId={focusedEventId}
           />
         )}
       </div>

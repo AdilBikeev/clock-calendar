@@ -176,6 +176,22 @@
   -webkit-overflow-scrolling: touch;
 }
 
+/* Стилизация SimpleBar скроллбара для модального окна */
+.event-modal-content .simplebar-scrollbar::before {
+  background-color: rgba(0, 0, 0, 0.2);
+  border-radius: 999px;
+  left: 2px;
+  right: 2px;
+}
+
+.event-modal-content .simplebar-scrollbar:hover::before {
+  background-color: rgba(0, 0, 0, 0.35);
+}
+
+.event-modal-content .simplebar-scrollbar.simplebar-dragging::before {
+  background-color: rgba(0, 0, 0, 0.5);
+}
+
 .event-modal-title {
   width: 100%;
   padding: 0;
@@ -243,14 +259,45 @@
   align-items: center;
   gap: 12px;
   flex-wrap: wrap;
+  width: 100%;
 }
 
 .event-modal-date-group {
   display: flex;
-  align-items: center;
-  gap: 12px;
+  flex-direction: row;
+  gap: 8px;
   flex: 1;
-  min-width: 200px;
+  min-width: 0;
+  width: 100%;
+}
+
+.event-modal-start-group {
+  justify-content: flex-start;
+}
+
+.event-modal-end-group {
+  justify-content: flex-end;
+}
+
+.event-modal-arrow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #86868b;
+  flex-shrink: 0;
+  padding: 0 4px;
+}
+
+.event-modal-arrow svg {
+  width: 20px;
+  height: 20px;
+}
+
+.event-modal-date-group .event-modal-date,
+.event-modal-date-group .event-modal-time {
+  margin: 0;
+  flex: 0 1 auto;
+  min-width: 0;
 }
 
 .event-modal-date,
@@ -263,14 +310,24 @@
   background: #ffffff;
   transition: all 0.2s ease;
   outline: none;
-  flex: 1;
+  flex: 1 1 auto;
+  min-width: 120px;
+  width: 100%;
+  box-sizing: border-box;
 }
 
-.event-modal-date:focus,
-.event-modal-time:focus {
+.event-modal-start-group .event-modal-date:focus,
+.event-modal-start-group .event-modal-time:focus {
   border-color: #007aff;
   box-shadow: 0 0 0 4px rgba(0, 122, 255, 0.1);
 }
+
+.event-modal-end-group .event-modal-date:focus,
+.event-modal-end-group .event-modal-time:focus {
+  border-color: #007aff;
+  box-shadow: 0 0 0 4px rgba(0, 122, 255, 0.1);
+}
+
 
 .event-modal-date:disabled,
 .event-modal-time:disabled {
@@ -286,6 +343,8 @@
   gap: 8px;
   cursor: pointer;
   user-select: none;
+  margin-top: 8px;
+  align-self: flex-start;
 }
 
 .event-modal-all-day-toggle input[type="checkbox"] {
@@ -394,13 +453,33 @@
     padding-bottom: max(32px, env(safe-area-inset-bottom, 0px) + 32px);
   }
 
+  .event-modal-datetime-row {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
+
   .event-modal-date-group {
     flex-direction: column;
-    min-width: 100%;
+    width: 100%;
+    gap: 8px;
+  }
+
+  .event-modal-arrow {
+    transform: rotate(90deg);
+    padding: 4px 0;
+    align-self: center;
   }
 
   .event-modal-date,
   .event-modal-time {
+    min-width: 0;
+    width: 100%;
+    flex: 1;
+  }
+  
+  .event-modal-start-group,
+  .event-modal-end-group {
     width: 100%;
   }
 }

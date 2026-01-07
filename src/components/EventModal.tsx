@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react'
 import { format } from 'date-fns'
-import { ru } from 'date-fns/locale'
+import SimpleBar from 'simplebar-react'
 import { Event } from '../types/event'
+import 'simplebar-react/dist/simplebar.min.css'
 import './EventModal.css'
 
 interface EventModalProps {
@@ -47,22 +48,112 @@ const EventModal: React.FC<EventModalProps> = ({
       setEndTime(format(end, 'HH:mm'))
     } else if (selectedDate) {
       // Создание нового события
-      const date = new Date(selectedDate)
-      date.setHours(0, 0, 0, 0)
-      const startDateStr = format(date, 'yyyy-MM-dd')
+      const now = new Date()
       
-      // Дата окончания такая же, как дата начала
-      const endDateStr = startDateStr
+      // Вычисляем время начала: текущее время + 1 час
+      const startTimeDate = new Date(now)
+      startTimeDate.setHours(startTimeDate.getHours() + 1)
+      // Округляем минуты и секунды до 0
+      startTimeDate.setMinutes(0, 0, 0)
+      
+      // Вычисляем время окончания: время начала + 1 час
+      const endTimeDate = new Date(startTimeDate)
+      endTimeDate.setHours(endTimeDate.getHours() + 1)
+      
+      // Используем selectedDate как базовую дату для начала события
+      const selectedDay = new Date(selectedDate)
+      selectedDay.setHours(0, 0, 0, 0)
+      const today = new Date(now)
+      today.setHours(0, 0, 0, 0)
+      
+      // Определяем дату начала события
+      // Если selectedDate - это сегодня и время начала на сегодня, используем сегодня
+      // Если время начала на завтра, используем завтра
+      // Если selectedDate - другой день, используем его
+      let startDateToUse: Date
+      if (selectedDay.getTime() === today.getTime()) {
+        // selectedDate - это сегодня
+        if (startTimeDate.getDate() === now.getDate() && 
+            startTimeDate.getMonth() === now.getMonth() && 
+            startTimeDate.getFullYear() === now.getFullYear()) {
+          // Время начала сегодня
+          startDateToUse = new Date(today)
+        } else {
+          // Время начала завтра
+          startDateToUse = new Date(today)
+          startDateToUse.setDate(startDateToUse.getDate() + 1)
+        }
+      } else {
+        // selectedDate - другой день, используем его
+        startDateToUse = new Date(selectedDay)
+      }
+      
+      // Определяем дату окончания
+      // Если время окончания на следующий день после даты начала, увеличиваем дату
+      const endTimeOnStartDay = new Date(startDateToUse)
+      endTimeOnStartDay.setHours(endTimeDate.getHours(), endTimeDate.getMinutes(), 0, 0)
+      
+      let endDateToUse: Date
+      if (endTimeDate.getHours() < startTimeDate.getHours() || 
+          (endTimeDate.getHours() === startTimeDate.getHours() && endTimeDate.getMinutes() < startTimeDate.getMinutes())) {
+        // Время окончания на следующий день (переход через полночь)
+        endDateToUse = new Date(startDateToUse)
+        endDateToUse.setDate(endDateToUse.getDate() + 1)
+      } else {
+        // Время окончания в тот же день
+        endDateToUse = new Date(startDateToUse)
+      }
+      
+      const startDateStr = format(startDateToUse, 'yyyy-MM-dd')
+      const endDateStr = format(endDateToUse, 'yyyy-MM-dd')
+      const startTimeStr = format(startTimeDate, 'HH:mm')
+      const endTimeStr = format(endTimeDate, 'HH:mm')
       
       setTitle('')
       setDescription('')
       setAllDay(false)
       setStartDate(startDateStr)
-      setStartTime('09:00')
+      setStartTime(startTimeStr)
       setEndDate(endDateStr)
-      setEndTime('10:00') // На 1 час позже времени начала
+      setEndTime(endTimeStr)
     }
   }, [event, selectedDate])
+
+  // Умная корректировка даты/времени окончания: если начало > конца, устанавливаем конец на начало + 1 час
+  useEffect(() => {
+    // Пропускаем корректировку для событий "Весь день" или если поля не заполнены
+    if (allDay || !startDate || !endDate || !startTime || !endTime) {
+      return
+    }
+
+    try {
+      // Создаем Date объекты для сравнения
+      const [startHour, startMin] = startTime.split(':').map(Number)
+      const [endHour, endMin] = endTime.split(':').map(Number)
+      const [startYear, startMonth, startDay] = startDate.split('-').map(Number)
+      const [endYear, endMonth, endDay] = endDate.split('-').map(Number)
+
+      const startDateTime = new Date(startYear, startMonth - 1, startDay, startHour, startMin, 0, 0)
+      const endDateTime = new Date(endYear, endMonth - 1, endDay, endHour, endMin, 0, 0)
+
+      // Если дата/время начала превышает дату/время окончания, корректируем окончание
+      if (startDateTime >= endDateTime) {
+        // Устанавливаем конец на начало + 1 час
+        const newEndDateTime = new Date(startDateTime)
+        newEndDateTime.setHours(newEndDateTime.getHours() + 1)
+
+        // Обновляем дату и время окончания
+        const newEndDate = format(newEndDateTime, 'yyyy-MM-dd')
+        const newEndTime = format(newEndDateTime, 'HH:mm')
+
+        setEndDate(newEndDate)
+        setEndTime(newEndTime)
+      }
+    } catch (error) {
+      // Игнорируем ошибки парсинга дат
+      console.error('Error adjusting end date/time:', error)
+    }
+  }, [startDate, startTime, endDate, endTime, allDay])
 
   const handleSave = (e: React.MouseEvent): void => {
     e.preventDefault()
@@ -95,8 +186,16 @@ const EventModal: React.FC<EventModalProps> = ({
         end = new Date(endDate)
         end.setHours(23, 59, 59, 999)
       } else {
-        start = new Date(`${startDate}T${startTime}`)
-        end = new Date(`${endDate}T${endTime}`)
+        // Создаем дату с локальным временем
+        // startDate в формате 'yyyy-MM-dd', startTime в формате 'HH:mm'
+        const [startHour, startMin] = startTime.split(':').map(Number)
+        const [endHour, endMin] = endTime.split(':').map(Number)
+        const [startYear, startMonth, startDay] = startDate.split('-').map(Number)
+        const [endYear, endMonth, endDay] = endDate.split('-').map(Number)
+        
+        // Создаем Date объекты с локальным временем (месяц в Date начинается с 0)
+        start = new Date(startYear, startMonth - 1, startDay, startHour, startMin, 0, 0)
+        end = new Date(endYear, endMonth - 1, endDay, endHour, endMin, 0, 0)
       }
 
       // Убеждаемся, что дата окончания не раньше даты начала
@@ -172,7 +271,7 @@ const EventModal: React.FC<EventModalProps> = ({
           </div>
         </div>
 
-        <div className="event-modal-content">
+        <SimpleBar className="event-modal-content">
           <input
             key={shakeKey}
             type="text"
@@ -198,10 +297,10 @@ const EventModal: React.FC<EventModalProps> = ({
             </div>
             <div className="event-modal-datetime">
               <div className="event-modal-datetime-row">
-                <div className="event-modal-date-group">
+                <div className="event-modal-date-group event-modal-start-group">
                   <input
                     type="date"
-                    className="event-modal-date"
+                    className="event-modal-date event-modal-start-date"
                     value={startDate}
                     onChange={(e) => {
                       setStartDate(e.target.value)
@@ -216,47 +315,54 @@ const EventModal: React.FC<EventModalProps> = ({
                   />
                   <input
                     type="time"
-                    className="event-modal-time"
+                    className="event-modal-time event-modal-start-time"
                     value={startTime}
                     onChange={(e) => setStartTime(e.target.value)}
                     disabled={allDay}
                   />
                 </div>
-                <label className="event-modal-all-day-toggle">
-                  <input
-                    type="checkbox"
-                    checked={allDay}
-                    onChange={(e) => {
-                      const checked = e.target.checked
-                      setAllDay(checked)
-                      if (checked) {
-                        // При включении "Весь день" синхронизируем даты и блокируем дату окончания
-                        setEndDate(startDate)
-                      }
-                    }}
-                  />
-                  <span className="toggle-slider"></span>
-                  <span className="toggle-label">Весь день</span>
-                </label>
-              </div>
-              <div className="event-modal-datetime-row">
-                <div className="event-modal-date-group">
+                
+                <div className="event-modal-arrow">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <line x1="5" y1="12" x2="19" y2="12" />
+                    <polyline points="12 5 19 12 12 19" />
+                  </svg>
+                </div>
+                
+                <div className="event-modal-date-group event-modal-end-group">
                   <input
                     type="date"
-                    className="event-modal-date"
+                    className="event-modal-date event-modal-end-date"
                     value={endDate}
                     onChange={(e) => setEndDate(e.target.value)}
                     disabled={allDay}
                   />
                   <input
                     type="time"
-                    className="event-modal-time"
+                    className="event-modal-time event-modal-end-time"
                     value={endTime}
                     onChange={(e) => setEndTime(e.target.value)}
                     disabled={allDay}
                   />
                 </div>
               </div>
+              
+              <label className="event-modal-all-day-toggle">
+                <input
+                  type="checkbox"
+                  checked={allDay}
+                  onChange={(e) => {
+                    const checked = e.target.checked
+                    setAllDay(checked)
+                    if (checked) {
+                      // При включении "Весь день" синхронизируем даты и блокируем дату окончания
+                      setEndDate(startDate)
+                    }
+                  }}
+                />
+                <span className="toggle-slider"></span>
+                <span className="toggle-label">Весь день</span>
+              </label>
             </div>
           </div>
 
@@ -277,7 +383,7 @@ const EventModal: React.FC<EventModalProps> = ({
               rows={4}
             />
           </div>
-        </div>
+        </SimpleBar>
       </div>
     </div>
   )

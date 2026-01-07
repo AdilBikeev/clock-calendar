@@ -3,11 +3,48 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 10px;
   animation: fadeIn 0.4s ease-out;
-  min-height: 0;
-  flex: 1;
-  overflow: hidden;
+  padding: 0;
+  flex: 1 1 auto;
+  min-height: min-content;
+}
+
+/* Исправление для SimpleBar - сохраняем размер контента */
+.day-view.simplebar-wrapper {
+  width: 100%;
+  height: 100%;
+  max-height: 100%;
+}
+
+.day-view .simplebar-content-wrapper {
+  width: 100%;
+  max-height: 100%;
+  overflow: auto;
+}
+
+.day-view .simplebar-content {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-height: min-content;
+  padding-bottom: 20px;
+}
+
+/* Стилизация SimpleBar скроллбара */
+.day-view .simplebar-scrollbar::before {
+  background-color: rgba(0, 0, 0, 0.2);
+  border-radius: 999px;
+  left: 2px;
+  right: 2px;
+}
+
+.day-view .simplebar-scrollbar:hover::before {
+  background-color: rgba(0, 0, 0, 0.35);
+}
+
+.day-view .simplebar-scrollbar.simplebar-dragging::before {
+  background-color: rgba(0, 0, 0, 0.5);
 }
 
 @keyframes fadeIn {
@@ -19,6 +56,74 @@
   }
 }
 
+.day-clocks-row {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  flex-shrink: 0;
+  gap: 20px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+  padding: 10px;
+  min-width: 0;
+}
+
+.day-clock-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  min-width: 281px;
+  max-width: 328px;
+  width: auto;
+}
+
+/* Адаптивность для мобильных устройств */
+@media (max-width: 768px) {
+  .day-clocks-row {
+    flex-direction: column;
+    gap: 15px;
+    padding: 10px 5px;
+  }
+  
+  .day-clock-wrapper {
+    min-width: 243px;
+    max-width: 100%;
+    width: 100%;
+  }
+  
+  .day-clock {
+    width: 243px;
+    height: 243px;
+    min-width: 243px;
+    min-height: 243px;
+  }
+  
+  .day-clock-period-title {
+    font-size: 17px;
+    margin-bottom: 12px;
+  }
+  
+  .day-event-title {
+    font-size: 16px;
+  }
+  
+  .day-event-time {
+    font-size: 14px;
+  }
+}
+
+.day-clock-period-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: #1d1d1f;
+  margin-bottom: 14px;
+  text-align: center;
+}
+
 .day-clock-container {
   display: flex;
   flex-direction: column;
@@ -26,7 +131,6 @@
   justify-content: center;
   width: 100%;
   flex-shrink: 0;
-  margin-bottom: 20px;
 }
 
 .day-clock-container.inactive {
@@ -34,11 +138,14 @@
 }
 
 .day-clock {
-  width: 240px;
-  height: 240px;
+  width: 281px;
+  height: 281px;
+  min-width: 281px;
+  min-height: 281px;
   position: relative;
   transition: all 0.3s ease;
   margin: 0 auto;
+  flex-shrink: 0;
 }
 
 .day-clock.inactive {
@@ -115,18 +222,21 @@
 
 .hour-hand {
   stroke: #1d1d1f;
+  stroke-width: 4;
   transition: transform 0.05s linear;
   transform-origin: 100px 100px;
 }
 
 .minute-hand {
   stroke: #007aff;
+  stroke-width: 3;
   transition: transform 0.05s linear;
   transform-origin: 100px 100px;
 }
 
 .second-hand {
   stroke: #ff3b30;
+  stroke-width: 2;
   transition: transform 0.05s linear;
   transform-origin: 100px 100px;
 }
@@ -135,30 +245,31 @@
 .day-events-list {
   width: 100%;
   max-width: 600px;
-  flex: 1;
-  overflow-y: auto;
+  flex-shrink: 0;
+  overflow-y: visible;
   overflow-x: hidden;
-  padding: 0 10px;
+  padding: 0 10px 30px 10px;
   box-sizing: border-box;
 }
 
 .day-events-empty {
   text-align: center;
   color: #86868b;
-  font-size: 14px;
-  padding: 20px;
+  font-size: 16px;
+  padding: 30px 20px;
 }
 
 .day-event-item {
   display: flex;
   align-items: flex-start;
-  gap: 12px;
-  padding: 12px;
-  margin-bottom: 8px;
+  gap: 14px;
+  padding: 16px;
+  margin-bottom: 10px;
   background: #f5f5f7;
-  border-radius: 10px;
+  border-radius: 12px;
   transition: all 0.2s ease;
   cursor: pointer;
+  scroll-margin: 10px; /* Отступ при прокрутке для лучшей видимости */
 }
 
 .day-event-item:hover {
@@ -175,12 +286,12 @@
 }
 
 .day-event-color-dot {
-  width: 12px;
-  height: 12px;
+  width: 16px;
+  height: 16px;
   border-radius: 50%;
   flex-shrink: 0;
   margin-top: 4px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
 .day-event-content {
@@ -189,22 +300,101 @@
 }
 
 .day-event-title {
-  font-size: 15px;
+  font-size: 18px;
   font-weight: 600;
   color: #1d1d1f;
-  margin-bottom: 4px;
+  margin-bottom: 6px;
   word-wrap: break-word;
+  line-height: 1.4;
 }
 
 .day-event-time {
-  font-size: 13px;
+  font-size: 15px;
   color: #86868b;
   font-weight: 400;
+  line-height: 1.3;
 }
 
 .day-event-item.all-day .day-event-time {
   color: #34c759;
   font-weight: 500;
+}
+
+/* Интерактивность для событий */
+.day-event-item.hovered,
+.day-event-item.focused {
+  transform: translateX(4px) scale(1.02);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  z-index: 10;
+  position: relative;
+}
+
+.day-event-item.focused {
+  border: 2px solid #007aff;
+  background: #f0f7ff;
+}
+
+.day-event-item.all-day.focused {
+  background: #c8e6c9;
+  border-color: #34c759;
+}
+
+/* Дуги событий на циферблате */
+.event-arcs-layer {
+  cursor: pointer;
+}
+
+.event-arc {
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  pointer-events: stroke;
+}
+
+.event-arc.hovered {
+  stroke-width: 10;
+  filter: drop-shadow(0 0 6px currentColor);
+  transform-origin: 100px 100px;
+}
+
+.event-arc.focused {
+  stroke-width: 10;
+  filter: drop-shadow(0 0 8px currentColor);
+  transform-origin: 100px 100px;
+  opacity: 1 !important;
+}
+
+.event-arc:hover {
+  stroke-width: 10;
+}
+
+/* Кастомный скроллбар для списка событий (если будет отдельная прокрутка) */
+.day-events-list::-webkit-scrollbar {
+  width: 6px;
+}
+
+.day-events-list::-webkit-scrollbar-track {
+  background: transparent;
+  border-radius: 999px;
+}
+
+.day-events-list::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.15);
+  border-radius: 999px;
+  border: none;
+  transition: background 0.2s ease;
+}
+
+.day-events-list::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.3);
+}
+
+.day-events-list::-webkit-scrollbar-thumb:active {
+  background: rgba(0, 0, 0, 0.4);
+}
+
+.day-events-list {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0, 0, 0, 0.15) transparent;
 }
 
 

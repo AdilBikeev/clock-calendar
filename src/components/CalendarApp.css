@@ -16,6 +16,10 @@
   margin: auto;
 }
 
+.calendar-app:has(.day-view) {
+  overflow: visible;
+}
+
 @keyframes fadeIn {
   from {
     opacity: 0;
@@ -31,7 +35,11 @@
   margin-bottom: 15px;
   transition: all 0.3s ease;
   flex-shrink: 0;
-  position: relative;
+  position: sticky;
+  top: 0;
+  background: #ffffff;
+  z-index: 100;
+  padding-bottom: 10px;
 }
 
 .header-navigation {
@@ -127,10 +135,50 @@
 }
 
 .calendar-content:has(.year-view) {
-  overflow-y: auto;
-  overflow-x: hidden;
+  overflow: hidden;
   display: flex;
   flex-direction: column;
+}
+
+.calendar-content:has(.day-view) {
+  overflow: hidden;
+  flex: 1 1 auto;
+  min-height: 0;
+  max-height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Стилизация SimpleBar скроллбара для calendar-content */
+.calendar-content .simplebar-scrollbar::before {
+  background-color: rgba(0, 0, 0, 0.2);
+  border-radius: 999px;
+  left: 2px;
+  right: 2px;
+}
+
+.calendar-content .simplebar-scrollbar:hover::before {
+  background-color: rgba(0, 0, 0, 0.35);
+}
+
+.calendar-content .simplebar-scrollbar.simplebar-dragging::before {
+  background-color: rgba(0, 0, 0, 0.5);
+}
+
+/* Скрываем нативный скроллбар для SimpleBar */
+.calendar-content .simplebar-wrapper {
+  overflow: hidden !important;
+}
+
+.calendar-content .simplebar-content-wrapper {
+  overflow: auto !important;
+  /* Скрываем нативный скроллбар */
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE/Edge */
+}
+
+.calendar-content .simplebar-content-wrapper::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, Opera */
 }
 
 @keyframes contentFadeIn {
@@ -203,4 +251,5 @@
     display: flex;
   }
 }
+
 
