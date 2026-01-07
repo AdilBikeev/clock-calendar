@@ -146,6 +146,11 @@
   transition: all 0.3s ease;
   margin: 0 auto;
   flex-shrink: 0;
+  -webkit-tap-highlight-color: transparent;
+  tap-highlight-color: transparent;
+  outline: none;
+  -webkit-user-select: none;
+  user-select: none;
 }
 
 .day-clock.inactive {
@@ -155,6 +160,9 @@
 .clock-face {
   width: 100%;
   height: 100%;
+  -webkit-tap-highlight-color: transparent;
+  tap-highlight-color: transparent;
+  outline: none;
 }
 
 .clock-outline {
@@ -342,12 +350,19 @@
 /* Дуги событий на циферблате */
 .event-arcs-layer {
   cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  tap-highlight-color: transparent;
 }
 
 .event-arc {
   cursor: pointer;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   pointer-events: stroke;
+  -webkit-tap-highlight-color: transparent;
+  tap-highlight-color: transparent;
+  outline: none;
+  -webkit-user-select: none;
+  user-select: none;
 }
 
 .event-arc.hovered {
