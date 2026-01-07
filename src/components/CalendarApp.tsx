@@ -132,8 +132,19 @@ const CalendarApp: React.FC = () => {
     }
   }
 
-  const handleDayClick = (date: Date): void => {
-    setSelectedDate(date)
+  const handleDayClick = (date: Date, isOtherMonth: boolean): void => {
+    if (isOtherMonth) {
+      // Переключение на другой месяц
+      setCurrentDate(startOfMonth(date))
+      setHighlightedDate(null)
+    }
+    // Убрали логику создания события при клике на день
+  }
+
+  const handleCreateEvent = (): void => {
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+    setSelectedDate(today)
     setSelectedEvent(null)
     setHighlightedDate(null)
     setIsModalOpen(true)
@@ -249,20 +260,27 @@ const CalendarApp: React.FC = () => {
         onMouseUp={handleMouseUp}
         onMouseLeave={handleMouseLeave}
       >
+        {viewMode === 'month' && (
+          <button 
+            className="calendar-add-event-btn"
+            onClick={handleCreateEvent}
+            title="Добавить событие"
+            aria-label="Добавить событие"
+          >
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="12" y1="5" x2="12" y2="19" />
+              <line x1="5" y1="12" x2="19" y2="12" />
+            </svg>
+          </button>
+        )}
+
         {viewMode === 'month' ? (
           <MonthView 
             key={`month-${currentDate.getFullYear()}-${currentDate.getMonth()}`}
             currentDate={currentDate}
             events={events}
             highlightedDate={highlightedDate}
-            onDayClick={(date: Date, isOtherMonth: boolean) => {
-              if (isOtherMonth) {
-                setCurrentDate(startOfMonth(date))
-                setHighlightedDate(null)
-              } else {
-                handleDayClick(date)
-              }
-            }}
+            onDayClick={handleDayClick}
             onEventClick={handleEventClick}
           />
         ) : (

@@ -48,13 +48,20 @@ const EventModal: React.FC<EventModalProps> = ({
     } else if (selectedDate) {
       // Создание нового события
       const date = new Date(selectedDate)
-      const dateStr = format(date, 'yyyy-MM-dd')
+      date.setHours(0, 0, 0, 0)
+      const startDateStr = format(date, 'yyyy-MM-dd')
+      
+      // День окончания - следующий день
+      const endDate = new Date(date)
+      endDate.setDate(endDate.getDate() + 1)
+      const endDateStr = format(endDate, 'yyyy-MM-dd')
+      
       setTitle('')
       setDescription('')
       setAllDay(false)
-      setStartDate(dateStr)
+      setStartDate(startDateStr)
       setStartTime('09:00')
-      setEndDate(dateStr)
+      setEndDate(endDateStr)
       setEndTime('10:00')
     }
   }, [event, selectedDate])
