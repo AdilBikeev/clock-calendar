@@ -31,6 +31,7 @@
   margin-bottom: 15px;
   transition: all 0.3s ease;
   flex-shrink: 0;
+  position: relative;
 }
 
 .header-navigation {
@@ -145,8 +146,8 @@
 
 .calendar-add-event-btn-header {
   position: absolute;
-  top: 16px;
-  right: 16px;
+  top: 15px;
+  right: 15px;
   background: #007aff;
   border: none;
   border-radius: 50%;
@@ -178,8 +179,8 @@
     display: flex;
     width: 36px;
     height: 36px;
-    top: 12px;
-    right: 12px;
+    top: 15px;
+    right: 15px;
   }
 
   .calendar-add-event-btn-header svg {
@@ -190,6 +191,10 @@
   .nav-button {
     width: 36px;
     height: 36px;
+  }
+
+  .calendar-header {
+    padding-right: 50px;
   }
 }
 
