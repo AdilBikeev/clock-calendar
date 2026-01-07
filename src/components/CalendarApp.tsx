@@ -140,8 +140,8 @@ const CalendarApp: React.FC = () => {
       const header = app.querySelector('.calendar-header') as HTMLElement
       const headerHeight = header?.offsetHeight || 0
       
-      // Вычисляем доступную высоту: высота экрана минус навигация (70px) минус отступы (20px сверху и снизу)
-      const navHeight = 70
+      // Вычисляем доступную высоту: высота экрана минус навигация (90px) минус отступы (20px сверху и снизу)
+      const navHeight = 90
       const rootPadding = 20
       const availableHeight = window.innerHeight - navHeight - rootPadding
       
