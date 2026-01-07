@@ -1,7 +1,7 @@
 import React from 'react'
 import './NavigationBar.css'
 
-type ViewMode = 'month' | 'year'
+type ViewMode = 'month' | 'year' | 'day'
 
 interface NavigationBarProps {
   viewMode: ViewMode
@@ -11,6 +11,12 @@ interface NavigationBarProps {
 const NavigationBar: React.FC<NavigationBarProps> = ({ viewMode, setViewMode }) => {
   return (
     <div className="navigation-bar">
+      <button
+        className={`nav-mode-button ${viewMode === 'day' ? 'active' : ''}`}
+        onClick={() => setViewMode('day')}
+      >
+        День
+      </button>
       <button
         className={`nav-mode-button ${viewMode === 'month' ? 'active' : ''}`}
         onClick={() => setViewMode('month')}

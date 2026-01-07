@@ -39,11 +39,15 @@ const MonthView: React.FC<MonthViewProps> = ({ currentDate, events, highlightedD
   }
 
   const handleDayClick = (day: Date, isCurrentMonth: boolean): void => {
-    if (!isCurrentMonth && onDayClick) {
-      // При клике на день другого месяца переключаемся на этот месяц
-      onDayClick(startOfMonth(day), true)
+    if (onDayClick) {
+      if (!isCurrentMonth) {
+        // При клике на день другого месяца переключаемся на этот месяц
+        onDayClick(startOfMonth(day), true)
+      } else {
+        // При клике на день текущего месяца - открываем представление "День"
+        onDayClick(day, false)
+      }
     }
-    // Убрали логику создания события при клике на день текущего месяца
   }
 
   return (

@@ -3,12 +3,13 @@ import { format, isSameDay, startOfMonth } from 'date-fns'
 import { ru } from 'date-fns/locale'
 import MonthView from './MonthView'
 import YearView from './YearView'
+import DayView from './DayView'
 import NavigationBar from './NavigationBar'
 import EventModal from './EventModal'
 import { Event, EVENT_COLORS } from '../types/event'
 import './CalendarApp.css'
 
-type ViewMode = 'month' | 'year'
+type ViewMode = 'month' | 'year' | 'day'
 
 interface SwipeRef {
   startX: number
@@ -67,8 +68,22 @@ const CalendarApp: React.FC = () => {
     setCurrentDate(new Date(currentDate.getFullYear() + 1, currentDate.getMonth(), 1))
   }
 
+  const handlePreviousDay = (): void => {
+    const prevDay = new Date(currentDate)
+    prevDay.setDate(prevDay.getDate() - 1)
+    setCurrentDate(prevDay)
+  }
+
+  const handleNextDay = (): void => {
+    const nextDay = new Date(currentDate)
+    nextDay.setDate(nextDay.getDate() + 1)
+    setCurrentDate(nextDay)
+  }
+
   const handleSwipeLeft = (): void => {
-    if (viewMode === 'month') {
+    if (viewMode === 'day') {
+      handleNextDay()
+    } else if (viewMode === 'month') {
       handleNextMonth()
     } else {
       handleNextYear()
@@ -76,7 +91,9 @@ const CalendarApp: React.FC = () => {
   }
 
   const handleSwipeRight = (): void => {
-    if (viewMode === 'month') {
+    if (viewMode === 'day') {
+      handlePreviousDay()
+    } else if (viewMode === 'month') {
       handlePreviousMonth()
     } else {
       handlePreviousYear()
@@ -137,8 +154,11 @@ const CalendarApp: React.FC = () => {
       // Переключение на другой месяц
       setCurrentDate(startOfMonth(date))
       setHighlightedDate(null)
+    } else {
+      // При клике на день текущего месяца - открываем представление "День"
+      setCurrentDate(date)
+      setViewMode('day')
     }
-    // Убрали логику создания события при клике на день
   }
 
   const handleCreateEvent = (): void => {
@@ -227,6 +247,7 @@ const CalendarApp: React.FC = () => {
 
   const monthTitle = format(currentDate, 'LLLL yyyy', { locale: ru })
   const yearTitle = format(currentDate, 'yyyy', { locale: ru })
+  const dayTitle = format(currentDate, 'd MMMM yyyy', { locale: ru })
 
   return (
     <div className="calendar-app">
@@ -234,17 +255,29 @@ const CalendarApp: React.FC = () => {
         <div className="header-navigation">
           <button 
             className="nav-button" 
-            onClick={viewMode === 'month' ? handlePreviousMonth : handlePreviousYear}
+            onClick={
+              viewMode === 'day' 
+                ? handlePreviousDay 
+                : viewMode === 'month' 
+                  ? handlePreviousMonth 
+                  : handlePreviousYear
+            }
             aria-label="Предыдущий период"
           >
             ‹
           </button>
           <h1 className="calendar-title">
-            {viewMode === 'month' ? monthTitle : yearTitle}
+            {viewMode === 'month' ? monthTitle : viewMode === 'year' ? yearTitle : dayTitle}
           </h1>
           <button 
             className="nav-button" 
-            onClick={viewMode === 'month' ? handleNextMonth : handleNextYear}
+            onClick={
+              viewMode === 'day' 
+                ? handleNextDay 
+                : viewMode === 'month' 
+                  ? handleNextMonth 
+                  : handleNextYear
+            }
             aria-label="Следующий период"
           >
             ›
@@ -283,7 +316,7 @@ const CalendarApp: React.FC = () => {
             onDayClick={handleDayClick}
             onEventClick={handleEventClick}
           />
-        ) : (
+        ) : viewMode === 'year' ? (
           <YearView 
             key={`year-${currentDate.getFullYear()}`}
             currentDate={currentDate} 
@@ -292,10 +325,24 @@ const CalendarApp: React.FC = () => {
               setViewMode('month')
             }}
           />
+        ) : (
+          <DayView 
+            key={`day-${currentDate.getFullYear()}-${currentDate.getMonth()}-${currentDate.getDate()}`}
+            currentDate={currentDate}
+          />
         )}
       </div>
 
-      <NavigationBar viewMode={viewMode} setViewMode={setViewMode} />
+      <NavigationBar 
+        viewMode={viewMode} 
+        setViewMode={(mode: ViewMode) => {
+          if (mode === 'day') {
+            // При переключении на "День" устанавливаем текущий день
+            setCurrentDate(new Date())
+          }
+          setViewMode(mode)
+        }}
+      />
 
       <EventModal
         isOpen={isModalOpen}
