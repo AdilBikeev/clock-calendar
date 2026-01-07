@@ -1,7 +1,8 @@
 .year-view {
   width: 100%;
-  overflow: hidden;
+  max-width: 100%;
   animation: yearFadeIn 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  box-sizing: border-box;
 }
 
 @keyframes yearFadeIn {
@@ -34,10 +35,13 @@
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   grid-template-rows: repeat(4, auto);
-  gap: 12px;
+  gap: 6px;
   width: 100%;
-  height: 100%;
+  height: auto;
+  min-height: 0;
   animation: yearGridFadeIn 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+  box-sizing: border-box;
+  align-content: start;
 }
 
 @keyframes yearGridFadeIn {
@@ -53,8 +57,8 @@
 
 .mini-month {
   background: transparent;
-  border-radius: 8px;
-  padding: 8px 4px;
+  border-radius: 6px;
+  padding: 4px 2px;
   display: flex;
   flex-direction: column;
   cursor: pointer;
@@ -62,6 +66,7 @@
   position: relative;
   border: 2px solid transparent;
   animation: miniMonthFadeIn 0.5s cubic-bezier(0.4, 0, 0.2, 1) both;
+  box-sizing: border-box;
 }
 
 @keyframes miniMonthFadeIn {
@@ -106,12 +111,13 @@
 
 .mini-month-title {
   text-align: center;
-  font-size: 13px;
+  font-size: 11px;
   font-weight: 500;
   color: #1d1d1f;
-  margin-bottom: 6px;
+  margin-bottom: 3px;
   text-transform: capitalize;
   transition: color 0.3s ease, font-weight 0.3s ease;
+  line-height: 1.1;
 }
 
 .mini-month.selected-month .mini-month-title {
@@ -123,16 +129,17 @@
   display: grid;
   grid-template-columns: repeat(7, 1fr);
   gap: 1px;
-  margin-bottom: 3px;
+  margin-bottom: 2px;
 }
 
 .mini-weekday {
   text-align: center;
-  font-size: 10px;
+  font-size: 9px;
   font-weight: 400;
   color: #86868b;
-  padding: 1px 0;
+  padding: 0;
   transition: color 0.3s ease;
+  line-height: 1;
 }
 
 .mini-weekday.saturday {
@@ -154,11 +161,12 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 3px;
+  border-radius: 2px;
   cursor: pointer;
   transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
-  min-height: 20px;
+  min-height: 16px;
+  max-height: 20px;
 }
 
 .mini-day-cell:hover {
@@ -220,10 +228,11 @@
 }
 
 .mini-day-number {
-  font-size: 11px;
+  font-size: 10px;
   color: #1d1d1f;
   font-weight: 400;
   transition: color 0.3s ease, font-weight 0.3s ease;
+  line-height: 1;
 }
 
 .mini-day-cell.other-month .mini-day-number {

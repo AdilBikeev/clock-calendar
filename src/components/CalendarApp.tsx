@@ -26,6 +26,8 @@ const CalendarApp: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false)
   const [highlightedDate, setHighlightedDate] = useState<Date | null>(null)
   const swipeRef = useRef<SwipeRef>({ startX: 0, startY: 0, isDragging: false })
+  const calendarAppRef = useRef<HTMLDivElement>(null)
+  const calendarContentRef = useRef<HTMLDivElement>(null)
 
   // Загрузка событий из localStorage
   useEffect(() => {
@@ -51,6 +53,50 @@ const CalendarApp: React.FC = () => {
       localStorage.setItem('calendar-events', JSON.stringify(events))
     }
   }, [events])
+
+  // Автоматическое масштабирование контента если он не помещается
+  useEffect(() => {
+    const adjustScale = (): void => {
+      const app = calendarAppRef.current
+      const content = calendarContentRef.current
+      if (!app || !content) return
+
+      const header = app.querySelector('.calendar-header') as HTMLElement
+      const headerHeight = header?.offsetHeight || 0
+      
+      // Вычисляем доступную высоту: высота экрана минус навигация (70px) минус отступы (20px сверху и снизу)
+      const navHeight = 70
+      const rootPadding = 20
+      const availableHeight = window.innerHeight - navHeight - rootPadding
+      
+      // Максимальная высота контента: доступная высота минус header минус padding calendar-app (30px)
+      const appPadding = 30
+      const maxContentHeight = availableHeight - headerHeight - appPadding
+
+      // Получаем реальную высоту контента
+      content.style.transform = '' // Сбрасываем трансформацию для измерения
+      content.style.transformOrigin = ''
+      const contentHeight = content.scrollHeight
+
+      if (contentHeight > maxContentHeight && maxContentHeight > 0) {
+        const scale = Math.min(maxContentHeight / contentHeight, 1)
+        content.style.transform = `scale(${scale})`
+        content.style.transformOrigin = 'top center'
+      } else {
+        content.style.transform = ''
+        content.style.transformOrigin = ''
+      }
+    }
+
+    // Задержка для завершения рендеринга
+    const timeoutId = setTimeout(adjustScale, 50)
+    window.addEventListener('resize', adjustScale)
+
+    return () => {
+      window.removeEventListener('resize', adjustScale)
+      clearTimeout(timeoutId)
+    }
+  }, [viewMode, currentDate, events])
 
   const handlePreviousMonth = (): void => {
     setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1))
@@ -250,7 +296,7 @@ const CalendarApp: React.FC = () => {
   const dayTitle = format(currentDate, 'd MMMM yyyy', { locale: ru })
 
   return (
-    <div className="calendar-app">
+    <div className="calendar-app" ref={calendarAppRef}>
       <div className="calendar-header">
         <div className="header-navigation">
           <button 
@@ -285,7 +331,20 @@ const CalendarApp: React.FC = () => {
         </div>
       </div>
 
+      <button 
+        className="calendar-add-event-btn-header"
+        onClick={handleCreateEvent}
+        title="Добавить событие"
+        aria-label="Добавить событие"
+      >
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+          <line x1="12" y1="5" x2="12" y2="19" />
+          <line x1="5" y1="12" x2="19" y2="12" />
+        </svg>
+      </button>
+
       <div 
+        ref={calendarContentRef}
         className="calendar-content"
         onTouchStart={handleTouchStart}
         onTouchEnd={handleTouchEnd}
@@ -293,20 +352,6 @@ const CalendarApp: React.FC = () => {
         onMouseUp={handleMouseUp}
         onMouseLeave={handleMouseLeave}
       >
-        {viewMode === 'month' && (
-          <button 
-            className="calendar-add-event-btn"
-            onClick={handleCreateEvent}
-            title="Добавить событие"
-            aria-label="Добавить событие"
-          >
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <line x1="12" y1="5" x2="12" y2="19" />
-              <line x1="5" y1="12" x2="19" y2="12" />
-            </svg>
-          </button>
-        )}
-
         {viewMode === 'month' ? (
           <MonthView 
             key={`month-${currentDate.getFullYear()}-${currentDate.getMonth()}`}

@@ -1,13 +1,19 @@
 .calendar-app {
   background: #ffffff;
-  border-radius: 20px;
+  border-radius: 15px;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-  padding: 30px;
+  padding: 15px;
   width: 100%;
   max-width: 800px;
+  max-height: 100%;
+  display: flex;
+  flex-direction: column;
   transition: all 0.3s ease;
   animation: fadeIn 0.4s ease-out;
   position: relative;
+  overflow: hidden;
+  box-sizing: border-box;
+  margin: auto;
 }
 
 @keyframes fadeIn {
@@ -22,70 +28,24 @@
 }
 
 .calendar-header {
-  margin-bottom: 30px;
+  margin-bottom: 15px;
   transition: all 0.3s ease;
-}
-
-@media (max-width: 768px) {
-  .calendar-app {
-    padding: 15px;
-    border-radius: 15px;
-  }
-  
-  .calendar-header {
-    margin-bottom: 15px;
-  }
-  
-  .calendar-title {
-    font-size: 22px;
-    min-width: auto;
-  }
-  
-  .nav-button {
-    width: 32px;
-    height: 32px;
-    font-size: 20px;
-  }
-}
-
-@media (max-width: 480px) {
-  .calendar-app {
-    padding: 10px;
-    border-radius: 10px;
-  }
-  
-  .calendar-header {
-    margin-bottom: 10px;
-  }
-  
-  .header-navigation {
-    gap: 10px;
-  }
-  
-  .calendar-title {
-    font-size: 18px;
-  }
-  
-  .nav-button {
-    width: 28px;
-    height: 28px;
-    font-size: 18px;
-  }
+  flex-shrink: 0;
 }
 
 .header-navigation {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 20px;
+  gap: 10px;
 }
 
 .calendar-title {
-  font-size: 28px;
+  font-size: 18px;
   font-weight: 600;
   color: #1d1d1f;
   text-transform: capitalize;
-  min-width: 200px;
+  min-width: auto;
   text-align: center;
   transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
   animation: titleSlide 0.4s ease-out;
@@ -130,9 +90,9 @@
   background: #f5f5f7;
   border: none;
   border-radius: 50%;
-  width: 40px;
-  height: 40px;
-  font-size: 24px;
+  width: 36px;
+  height: 36px;
+  font-size: 20px;
   color: #1d1d1f;
   cursor: pointer;
   display: flex;
@@ -153,14 +113,23 @@
 
 .calendar-content {
   width: 100%;
+  flex: 0 1 auto;
+  min-height: 0;
   overflow: hidden;
   touch-action: pan-y;
-  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: transform 0.3s ease-out, all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
   animation: contentFadeIn 0.4s ease-out;
+  box-sizing: border-box;
+  position: relative;
+  display: flex;
+  flex-direction: column;
 }
 
 .calendar-content:has(.year-view) {
-  overflow: visible;
+  overflow-y: auto;
+  overflow-x: hidden;
+  display: flex;
+  flex-direction: column;
 }
 
 @keyframes contentFadeIn {
@@ -174,39 +143,59 @@
   }
 }
 
-.calendar-add-event-btn {
-  position: fixed;
-  bottom: 80px;
-  right: 20px;
-  width: 56px;
-  height: 56px;
-  border-radius: 50%;
+.calendar-add-event-btn-header {
+  position: absolute;
+  top: 16px;
+  right: 16px;
   background: #007aff;
-  color: #ffffff;
   border: none;
-  box-shadow: 0 4px 12px rgba(0, 122, 255, 0.4);
+  border-radius: 50%;
+  width: 36px;
+  height: 36px;
+  color: #ffffff;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 1000;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  user-select: none;
+  box-shadow: 0 2px 8px rgba(0, 122, 255, 0.3);
+  z-index: 100;
 }
 
-.calendar-add-event-btn:hover {
+.calendar-add-event-btn-header:hover {
   background: #0051d5;
   transform: scale(1.1);
-  box-shadow: 0 6px 16px rgba(0, 122, 255, 0.5);
+  box-shadow: 0 3px 10px rgba(0, 122, 255, 0.4);
 }
 
-.calendar-add-event-btn:active {
+.calendar-add-event-btn-header:active {
   transform: scale(0.95);
 }
 
 @media (max-width: 768px) {
-  .calendar-add-event-btn {
-    bottom: calc(env(safe-area-inset-bottom, 0px) + 80px);
-    right: 16px;
+  .calendar-add-event-btn-header {
+    display: flex;
+    width: 36px;
+    height: 36px;
+    top: 12px;
+    right: 12px;
+  }
+
+  .calendar-add-event-btn-header svg {
+    width: 18px;
+    height: 18px;
+  }
+
+  .nav-button {
+    width: 36px;
+    height: 36px;
+  }
+}
+
+@media (min-width: 769px) {
+  .calendar-add-event-btn-header {
+    display: flex;
   }
 }
 

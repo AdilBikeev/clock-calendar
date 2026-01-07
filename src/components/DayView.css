@@ -4,7 +4,7 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 20px;
+  padding: 10px;
   animation: fadeIn 0.4s ease-out;
   min-height: 0;
   flex: 1;
@@ -33,8 +33,8 @@
 }
 
 .day-clock {
-  width: 280px;
-  height: 280px;
+  width: 240px;
+  height: 240px;
   position: relative;
   transition: all 0.3s ease;
   margin: 0 auto;
@@ -131,44 +131,4 @@
 }
 
 
-@media (max-width: 768px) {
-  .day-view {
-    padding: 10px;
-  }
-
-  .day-clock {
-    width: 240px;
-    height: 240px;
-  }
-}
-
-@media (max-width: 480px) {
-  .day-view {
-    padding: 5px;
-  }
-
-  .day-clock {
-    width: 200px;
-    height: 200px;
-  }
-
-  .hour-number {
-    font-size: 11px !important;
-  }
-}
-
-@media (max-width: 375px) {
-  .day-view {
-    padding: 5px;
-  }
-
-  .day-clock {
-    width: 180px;
-    height: 180px;
-  }
-
-  .hour-number {
-    font-size: 10px !important;
-  }
-}
 
