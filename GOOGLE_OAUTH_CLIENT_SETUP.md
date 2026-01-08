@@ -37,8 +37,10 @@ Application type: Desktop app
 Обновите файл `.env` в корне проекта:
 
 ```env
-VITE_GOOGLE_CLIENT_ID=ваш_новый_client_id_здесь
+GOOGLE_CLIENT_ID=ваш_новый_client_id_здесь
 ```
+
+**Примечание**: В Webpack переменные окружения не требуют префикса `VITE_`, используйте просто `GOOGLE_CLIENT_ID`.
 
 **Удалите или закомментируйте** старый Client ID, если он был для Web application типа.
 

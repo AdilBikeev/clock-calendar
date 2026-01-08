@@ -9,9 +9,9 @@ import { generatePKCEPair } from '../utils/pkceUtils'
 
 // Google OAuth 2.0 Configuration
 // Эти значения нужно будет настроить в Google Cloud Console
-const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || ''
-const GOOGLE_CLIENT_SECRET = import.meta.env.VITE_GOOGLE_CLIENT_SECRET || '' // Опционально: для Desktop app может потребоваться
-const GOOGLE_REDIRECT_URI = import.meta.env.VITE_GOOGLE_REDIRECT_URI || `${window.location.origin}/oauth/google/callback`
+const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || ''
+const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET || '' // Опционально: для Desktop app может потребоваться
+const GOOGLE_REDIRECT_URI = process.env.GOOGLE_REDIRECT_URI || `${window.location.origin}/oauth/google/callback`
 // Scopes: календарь + профиль пользователя (для получения email и имени)
 const GOOGLE_SCOPES = 'https://www.googleapis.com/auth/calendar.readonly https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/userinfo.profile'
 const GOOGLE_AUTH_URL = 'https://accounts.google.com/o/oauth2/v2/auth'
@@ -56,7 +56,7 @@ export const exchangeCodeForTokens = async (
   // Проверяем, что client_id настроен
   if (!GOOGLE_CLIENT_ID) {
     throw new Error(
-      'VITE_GOOGLE_CLIENT_ID не настроен в .env файле. ' +
+      'GOOGLE_CLIENT_ID не настроен в переменных окружения. ' +
       'Пожалуйста, создайте OAuth client типа "Desktop app" в Google Cloud Console и укажите Client ID в .env файле.'
     )
   }
@@ -101,7 +101,7 @@ export const exchangeCodeForTokens = async (
           `2. Найдите ваш OAuth client (Desktop app или Web application)\n` +
           `3. Скопируйте Client Secret\n` +
           `4. Добавьте в .env файл:\n` +
-          `   VITE_GOOGLE_CLIENT_SECRET=ваш_client_secret_здесь\n` +
+          `   GOOGLE_CLIENT_SECRET=ваш_client_secret_здесь\n` +
           `5. Перезапустите сервер разработки (npm run dev)\n\n` +
           `⚠️ ВНИМАНИЕ: Client Secret будет виден в клиентском коде (небезопасно для продакшена).\n` +
           `Для продакшена рекомендуется использовать серверный прокси.\n\n` +
@@ -338,7 +338,7 @@ export const initiateGoogleOAuth = async (accountId: string): Promise<void> => {
   // Проверяем, что client_id настроен
   if (!GOOGLE_CLIENT_ID) {
     throw new Error(
-      'VITE_GOOGLE_CLIENT_ID не настроен в .env файле. ' +
+      'GOOGLE_CLIENT_ID не настроен в переменных окружения. ' +
       'Пожалуйста, создайте OAuth client типа "Desktop app" в Google Cloud Console и укажите Client ID в .env файле.'
     )
   }
