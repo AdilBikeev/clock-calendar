@@ -80,24 +80,7 @@ module.exports = (env, argv) => {
         'process.env.GOOGLE_REDIRECT_URI': JSON.stringify(process.env.GOOGLE_REDIRECT_URI || '')
       })
     ],
-    devServer: {
-      static: {
-        directory: path.join(__dirname, 'dist')
-      },
-      port: 3000,
-      host: '0.0.0.0', // Позволяет доступ из локальной сети
-      open: true,
-      hot: true,
-      historyApiFallback: {
-        index: '/index.html',
-        disableDotRule: true,
-        // Все маршруты, включая OAuth callback, должны возвращать index.html
-        rewrites: [
-          { from: /^\/oauth\/.*$/, to: '/index.html' }
-        ]
-      },
-      compress: true
-    },
+    // devServer конфигурация больше не нужна, используем dev-server.js
     devtool: isProduction ? 'source-map' : 'eval-source-map',
     optimization: {
       splitChunks: {
