@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react'
-import { format } from 'date-fns'
+import { format, subMonths, addMonths } from 'date-fns'
 import { ru } from 'date-fns/locale'
 import SimpleBar from 'simplebar-react'
 import { FaCog } from 'react-icons/fa'
@@ -9,6 +9,7 @@ import DayView from '../DayView/DayView'
 import NavigationBar from '../NavigationBar/NavigationBar'
 import EventModal from '../EventModal/EventModal'
 import SettingsPanel from '../SettingsPanel/SettingsPanel'
+import AccountModal from '../AccountModal/AccountModal'
 import { Event } from '../../types/event'
 import { CALENDAR_CONFIG } from '../../constants'
 import { useEvents } from '../../hooks/useEvents'
@@ -16,6 +17,7 @@ import { useCalendar } from '../../hooks/useCalendar'
 import { useSwipe } from '../../hooks/useSwipe'
 import { useCalendarScale } from '../../hooks/useCalendarScale'
 import { useQuickAddEvent } from '../../hooks/useQuickAddEvent'
+import { useAccounts } from '../../hooks/useAccounts'
 import { shouldUpdateCurrentDate } from '../../services/eventService'
 import 'simplebar-react/dist/simplebar.min.css'
 import './CalendarApp.css'
@@ -23,7 +25,14 @@ import './CalendarApp.css'
 const CalendarApp: React.FC = () => {
   // Используем custom hooks для управления состоянием
   const calendar = useCalendar()
-  const { events, saveEvent, deleteEvent } = useEvents()
+  const { events, saveEvent, deleteEvent, addEvent } = useEvents()
+  const {
+    accounts,
+    connectGoogleAccount,
+    handleGoogleOAuthSuccess,
+    syncAllAccounts,
+    removeAccount,
+  } = useAccounts()
 
   // Состояние для модального окна событий
   const [selectedDate, setSelectedDate] = useState<Date | null>(null)
@@ -33,6 +42,8 @@ const CalendarApp: React.FC = () => {
   const [focusedEventId, setFocusedEventId] = useState<string | null>(null)
   const [defaultAllDay, setDefaultAllDay] = useState<boolean>(false)
   const [isSettingsOpen, setIsSettingsOpen] = useState<boolean>(false)
+  const [isAccountModalOpen, setIsAccountModalOpen] = useState<boolean>(false)
+  const [isSyncing, setIsSyncing] = useState<boolean>(false)
 
   // Refs для DOM элементов
   const calendarAppRef = useRef<HTMLDivElement>(null)
@@ -90,6 +101,73 @@ const CalendarApp: React.FC = () => {
       setSelectedEvent(null)
     }
   }, [calendar.currentDate, calendar.viewMode])
+
+  // Обработка OAuth callback
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search)
+    const code = urlParams.get('code')
+    const state = urlParams.get('state')
+    const error = urlParams.get('error')
+
+    if (error) {
+      // Очищаем URL параметры
+      window.history.replaceState({}, document.title, window.location.pathname)
+      return
+    }
+
+    if (code && state) {
+      // Обрабатываем OAuth callback
+      handleGoogleOAuthSuccess(code, state)
+        .then(() => {
+          // Синхронизируем события после успешного подключения
+          syncGoogleEvents()
+        })
+        .catch(() => {
+          // Ошибка обработки OAuth callback
+        })
+        .finally(() => {
+          // Очищаем URL параметры
+          window.history.replaceState({}, document.title, window.location.pathname)
+        })
+    }
+  }, [])
+
+  // Синхронизация событий из Google Calendar
+  const syncGoogleEvents = useCallback(async () => {
+    if (accounts.length === 0 || isSyncing) {
+      return
+    }
+
+    setIsSyncing(true)
+    try {
+      // Определяем диапазон дат для синхронизации (текущий месяц ± 1 месяц)
+      const timeMin = subMonths(calendar.currentDate, 1)
+      const timeMax = addMonths(calendar.currentDate, 1)
+
+      // Получаем события из всех подключенных аккаунтов
+      const syncedEvents = await syncAllAccounts(timeMin, timeMax, events)
+
+      // Добавляем новые события (проверяем, чтобы не дублировать)
+      const existingEventIds = new Set(events.map((e) => e.id))
+      for (const event of syncedEvents) {
+        if (!existingEventIds.has(event.id)) {
+          addEvent(event)
+        }
+      }
+    } catch (error) {
+      // Ошибка синхронизации событий Google Calendar
+    } finally {
+      setIsSyncing(false)
+    }
+  }, [accounts.length, syncAllAccounts, events, calendar.currentDate, addEvent, isSyncing])
+
+  // Синхронизируем события при изменении текущей даты или подключении нового аккаунта
+  useEffect(() => {
+    if (accounts.length > 0 && !isSyncing) {
+      syncGoogleEvents()
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [calendar.currentDate, accounts.length])
 
   // Обработчики событий
   const handleDayClick = (date: Date): void => {
@@ -158,8 +236,28 @@ const CalendarApp: React.FC = () => {
   }
 
   const handleAddAccount = (): void => {
-    // Заглушка, логика будет добавлена позже
-    console.log('Добавить аккаунт')
+    setIsAccountModalOpen(true)
+  }
+
+  const handleSelectAccount = async (accountType: 'google') => {
+    if (accountType === 'google') {
+      try {
+        await connectGoogleAccount()
+        // OAuth процесс перенаправит пользователя на Google
+        // После возврата callback будет обработан в useEffect выше
+      } catch (error) {
+        // Ошибка подключения Google аккаунта
+      }
+    }
+  }
+
+  const handleRemoveAccount = (accountId: string) => {
+    removeAccount(accountId)
+    // Удаляем события, связанные с этим аккаунтом
+    const accountEvents = events.filter((e) => e.id.startsWith(`google-${accountId}-`))
+    accountEvents.forEach((event) => {
+      deleteEvent(event.id)
+    })
   }
 
   // Форматирование заголовков
@@ -295,6 +393,14 @@ const CalendarApp: React.FC = () => {
         isOpen={isSettingsOpen}
         onClose={handleSettingsToggle}
         onAddAccount={handleAddAccount}
+        accounts={accounts}
+        onRemoveAccount={handleRemoveAccount}
+      />
+
+      <AccountModal
+        isOpen={isAccountModalOpen}
+        onClose={() => setIsAccountModalOpen(false)}
+        onSelectAccount={handleSelectAccount}
       />
 
       <EventModal

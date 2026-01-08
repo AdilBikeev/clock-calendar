@@ -28,3 +28,4 @@ android/
 ios/
 .ios/
 
+.env

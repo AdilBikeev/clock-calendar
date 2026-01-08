@@ -11,6 +11,7 @@ export const EVENT_COLORS: string[] = [
 
 export const STORAGE_KEYS = {
   CALENDAR_EVENTS: 'calendar-events',
+  CALENDAR_ACCOUNTS: 'calendar-accounts',
 } as const
 
 export const CALENDAR_CONFIG = {
