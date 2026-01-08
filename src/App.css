@@ -3,18 +3,18 @@
   flex: 1;
   min-height: 0;
   display: flex;
-  justify-content: center;
+  flex-direction: column;
+  justify-content: flex-start;
   align-items: center;
   padding: 10px;
-  /* padding-bottom учитывает навигационную панель + отступ снизу белого квадрата (равный padding-top навигационной панели) */
-  padding-bottom: calc(90px + 20px + 10px); /* навигационная панель (90px) + отступ (20px) + нижний padding (10px) */
+  padding-bottom: calc(90px + 10px); /* Отступ для навигационной панели (90px) + padding */
   box-sizing: border-box;
+  overflow: hidden;
 }
 
 @media (max-width: 768px) {
   .app {
-    /* padding-bottom учитывает навигационную панель + отступ снизу белого квадрата (равный padding-top навигационной панели) + safe area */
-    padding-bottom: calc(100px + 24px + 10px + env(safe-area-inset-bottom, 0px)); /* навигационная панель (100px) + отступ (24px) + нижний padding (10px) + safe area */
+    padding-bottom: calc(100px + 10px + env(safe-area-inset-bottom, 0px)); /* Отступ для навигационной панели (100px) + padding + safe area */
   }
 }
 

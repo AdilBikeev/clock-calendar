@@ -32,6 +32,8 @@ const CalendarApp: React.FC = () => {
   const calendarAppRef = useRef<HTMLDivElement>(null)
   const calendarContentRef = useRef<HTMLDivElement>(null)
   const [isEventsLoaded, setIsEventsLoaded] = useState<boolean>(false)
+  const [quickEventTitle, setQuickEventTitle] = useState<string>('')
+  const [defaultAllDay, setDefaultAllDay] = useState<boolean>(false)
 
   // Загрузка событий из localStorage
   useEffect(() => {
@@ -296,6 +298,59 @@ const CalendarApp: React.FC = () => {
     setIsModalOpen(true)
   }
 
+  const handleQuickAddEvent = (): void => {
+    if (!quickEventTitle.trim()) {
+      // Если поле пустое - открываем модальное окно с флагом "Весь день" по умолчанию
+      setDefaultAllDay(true)
+      handleCreateEvent()
+      return
+    }
+
+    // Определяем дату события
+    let eventDate: Date
+    if (viewMode === 'day') {
+      // На дневном календаре - используем выбранный день
+      eventDate = new Date(currentDate)
+    } else {
+      // На месячном календаре - используем текущий день
+      eventDate = new Date()
+    }
+    eventDate.setHours(0, 0, 0, 0)
+
+    // Дата окончания - тот же день, конец дня
+    const endDate = new Date(eventDate)
+    endDate.setHours(23, 59, 59, 999)
+
+    // Находим уже используемые цвета для этого дня
+    const dayEvents = events.filter(e => {
+      const eventStart = new Date(e.startDate)
+      return isSameDay(eventStart, eventDate)
+    })
+    const usedColors = dayEvents.map(e => e.color)
+    
+    // Находим первый доступный цвет
+    let availableColor = EVENT_COLORS[0]
+    for (const color of EVENT_COLORS) {
+      if (!usedColors.includes(color)) {
+        availableColor = color
+        break
+      }
+    }
+
+    // Создаем новое событие
+    const newEvent: Event = {
+      id: `event-${Date.now()}-${Math.random()}`,
+      title: quickEventTitle.trim(),
+      startDate: eventDate,
+      endDate: endDate,
+      allDay: true,
+      color: availableColor
+    }
+
+    setEvents([...events, newEvent])
+    setQuickEventTitle('') // Очищаем поле ввода
+  }
+
   const handleEventClick = (event: Event): void => {
     setSelectedEvent(event)
     setSelectedDate(null)
@@ -389,6 +444,7 @@ const CalendarApp: React.FC = () => {
   const handleCloseModal = (): void => {
     setIsModalOpen(false)
     setSelectedDate(null)
+    setDefaultAllDay(false) // Сбрасываем флаг при закрытии
     // selectedEvent не сбрасываем сразу, чтобы сохранить фокус в DayView
     // Он будет сброшен при изменении представления или даты
   }
@@ -415,6 +471,7 @@ const CalendarApp: React.FC = () => {
   const dayTitle = format(currentDate, 'd MMMM yyyy', { locale: ru })
 
   return (
+    <>
     <div className="calendar-app" ref={calendarAppRef}>
       <div className="calendar-header">
         <div className="header-navigation">
@@ -449,18 +506,6 @@ const CalendarApp: React.FC = () => {
           </button>
         </div>
       </div>
-
-      <button 
-        className="calendar-add-event-btn-header"
-        onClick={handleCreateEvent}
-        title="Добавить событие"
-        aria-label="Добавить событие"
-      >
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-          <line x1="12" y1="5" x2="12" y2="19" />
-          <line x1="5" y1="12" x2="19" y2="12" />
-        </svg>
-      </button>
 
       <div 
         ref={calendarContentRef}
@@ -500,6 +545,36 @@ const CalendarApp: React.FC = () => {
           />
         )}
       </div>
+    </div>
+
+      {/* Панель быстрого добавления событий (только для месячного и дневного календаря) */}
+      {(viewMode === 'month' || viewMode === 'day') && (
+      <div className="quick-add-event-bar">
+        <input
+          type="text"
+          className="quick-add-event-input"
+          placeholder="Добавьте название события"
+          value={quickEventTitle}
+          onChange={(e) => setQuickEventTitle(e.target.value)}
+          onKeyPress={(e) => {
+            if (e.key === 'Enter') {
+              handleQuickAddEvent()
+            }
+          }}
+        />
+        <button
+          className="quick-add-event-button"
+          onClick={handleQuickAddEvent}
+          title="Добавить событие"
+          aria-label="Добавить событие"
+        >
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <line x1="12" y1="5" x2="12" y2="19" />
+            <line x1="5" y1="12" x2="19" y2="12" />
+          </svg>
+        </button>
+      </div>
+      )}
 
       <NavigationBar 
         viewMode={viewMode} 
@@ -519,8 +594,9 @@ const CalendarApp: React.FC = () => {
         onClose={handleCloseModal}
         onSave={handleSaveEvent}
         onDelete={handleDeleteEvent}
+        defaultAllDay={defaultAllDay}
       />
-    </div>
+    </>
   )
 }
 

@@ -12,6 +12,7 @@ interface EventModalProps {
   onClose: () => void
   onSave: (event: Event) => void
   onDelete: (eventId: string) => void
+  defaultAllDay?: boolean
 }
 
 const EventModal: React.FC<EventModalProps> = ({
@@ -20,7 +21,8 @@ const EventModal: React.FC<EventModalProps> = ({
   event,
   onClose,
   onSave,
-  onDelete
+  onDelete,
+  defaultAllDay = false
 }) => {
   const [title, setTitle] = useState<string>('')
   const [startDate, setStartDate] = useState<string>('')
@@ -242,13 +244,13 @@ const EventModal: React.FC<EventModalProps> = ({
       
       setTitle('')
       setDescription('')
-      setAllDay(false)
+      setAllDay(defaultAllDay)
       setStartDate(startDateStr)
       setStartTime(startTimeStr)
       setEndDate(endDateStr)
       setEndTime(endTimeStr)
     }
-  }, [event, selectedDate])
+  }, [event, selectedDate, defaultAllDay])
 
   // Умная корректировка даты/времени окончания: если начало > конца, устанавливаем конец на начало + 1 час
   useEffect(() => {
