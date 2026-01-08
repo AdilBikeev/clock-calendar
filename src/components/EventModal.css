@@ -477,6 +477,15 @@
   .event-modal-content {
     padding: 20px;
     padding-bottom: max(32px, env(safe-area-inset-bottom, 0px) + 32px);
+    gap: 24px; /* Увеличиваем gap между элементами на мобильных */
+  }
+
+  .event-modal-title {
+    margin-bottom: 16px; /* Добавляем отступ снизу от названия события */
+  }
+
+  .event-modal-all-day-toggle {
+    margin-bottom: 16px; /* Добавляем отступ снизу после тоггла "весь день" */
   }
 
   .event-modal-datetime-row {
