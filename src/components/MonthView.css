@@ -86,6 +86,9 @@
   position: relative;
   animation: dayCellFadeIn 0.4s cubic-bezier(0.4, 0, 0.2, 1) both;
   padding: 8px 4px;
+  /* Убеждаемся, что весь элемент кликабелен */
+  pointer-events: auto;
+  z-index: 1;
 }
 
 @keyframes dayCellFadeIn {
@@ -132,6 +135,9 @@
   border: 2px solid #007aff;
   box-shadow: 0 0 0 2px rgba(0, 122, 255, 0.2), 0 4px 12px rgba(0, 122, 255, 0.3);
   animation: todayPulse 2s ease-in-out infinite, dayCellFadeIn 0.4s cubic-bezier(0.4, 0, 0.2, 1) both;
+  /* Убеждаемся, что весь элемент кликабелен */
+  pointer-events: auto;
+  z-index: 1;
 }
 
 @keyframes todayPulse {
@@ -157,7 +163,12 @@
   margin-top: 4px;
   flex-wrap: wrap;
   max-width: 100%;
-  pointer-events: auto;
+  pointer-events: none; /* Отключаем pointer-events для контейнера, чтобы клики проходили на родителя */
+}
+
+.day-events-indicators .day-event-dot,
+.day-events-indicators .day-event-more {
+  pointer-events: auto; /* Включаем pointer-events только для самих маркеров */
 }
 
 .day-event-dot {
@@ -210,6 +221,8 @@
   color: #1d1d1f;
   transition: all 0.2s ease;
   pointer-events: none;
+  user-select: none;
+  -webkit-user-select: none;
 }
 
 .day-cell.saturday .day-number,

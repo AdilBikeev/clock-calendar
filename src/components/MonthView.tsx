@@ -77,14 +77,8 @@ const MonthView: React.FC<MonthViewProps> = ({ currentDate, events, highlightedD
               style={{
                 animationDelay: `${index * 0.01}s`
               }}
-              onClick={(e) => {
-                // Проверяем, что клик не по маркеру события
-                const target = e.target as HTMLElement
-                // Если клик по маркеру события - игнорируем
-                if (target.closest('.day-event-dot') || target.closest('.day-event-more')) {
-                  return
-                }
-                // Остальные клики обрабатываем - открываем представление "День"
+              onClick={() => {
+                // Любой клик по ячейке дня переводит в представление "День"
                 handleDayClick(day, isCurrentMonth)
               }}
             >
@@ -97,18 +91,10 @@ const MonthView: React.FC<MonthViewProps> = ({ currentDate, events, highlightedD
                       className="day-event-dot"
                       style={{ backgroundColor: event.color }}
                       title={event.title}
-                      onClick={(e) => {
-                        e.stopPropagation()
-                      }}
                     />
                   ))}
                   {dayEvents.length > 3 && (
-                    <div 
-                      className="day-event-more"
-                      onClick={(e) => {
-                        e.stopPropagation()
-                      }}
-                    >
+                    <div className="day-event-more">
                       +{dayEvents.length - 3}
                     </div>
                   )}
