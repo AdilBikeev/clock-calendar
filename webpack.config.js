@@ -17,7 +17,9 @@ module.exports = (env, argv) => {
       filename: isProduction ? 'js/[name].[contenthash].js' : 'js/[name].js',
       chunkFilename: isProduction ? 'js/[name].[contenthash].chunk.js' : 'js/[name].chunk.js',
       assetModuleFilename: 'assets/[name].[hash][ext]',
-      publicPath: './',
+      // Используем '/' для dev-сервера (чтобы работали вложенные маршруты как /oauth/google/callback)
+      // и './' для production (для Capacitor)
+      publicPath: isProduction ? './' : '/',
       clean: true
     },
     resolve: {
@@ -30,7 +32,16 @@ module.exports = (env, argv) => {
       rules: [
         {
           test: /\.tsx?$/,
-          use: 'ts-loader',
+          use: {
+            loader: 'ts-loader',
+            options: {
+              transpileOnly: false,
+              compilerOptions: {
+                // Переопределяем noEmit для ts-loader, так как webpack сам управляет выводом
+                noEmit: false
+              }
+            }
+          },
           exclude: /node_modules/
         },
         {
@@ -77,7 +88,14 @@ module.exports = (env, argv) => {
       host: '0.0.0.0', // Позволяет доступ из локальной сети
       open: true,
       hot: true,
-      historyApiFallback: true,
+      historyApiFallback: {
+        index: '/index.html',
+        disableDotRule: true,
+        // Все маршруты, включая OAuth callback, должны возвращать index.html
+        rewrites: [
+          { from: /^\/oauth\/.*$/, to: '/index.html' }
+        ]
+      },
       compress: true
     },
     devtool: isProduction ? 'source-map' : 'eval-source-map',
