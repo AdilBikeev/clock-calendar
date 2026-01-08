@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { format } from 'date-fns'
 import SimpleBar from 'simplebar-react'
-import { Event } from '../types/event'
+import { Event } from '../../types/event'
 import 'simplebar-react/dist/simplebar.min.css'
 import './EventModal.css'
 

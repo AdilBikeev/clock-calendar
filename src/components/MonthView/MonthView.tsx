@@ -11,7 +11,7 @@ import {
   isSameDay
 } from 'date-fns'
 import { ru } from 'date-fns/locale'
-import { Event } from '../types/event'
+import { Event } from '../../types/event'
 import './MonthView.css'
 
 interface MonthViewProps {

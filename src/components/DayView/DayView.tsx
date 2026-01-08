@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react'
 import { isSameDay, startOfDay, endOfDay, format } from 'date-fns'
 import { ru } from 'date-fns/locale'
 import SimpleBar from 'simplebar-react'
-import { Event } from '../types/event'
+import { Event } from '../../types/event'
 import 'simplebar-react/dist/simplebar.min.css'
 import './DayView.css'
 
