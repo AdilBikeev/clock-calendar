@@ -18,7 +18,7 @@ interface MonthViewProps {
   currentDate: Date
   events: Event[]
   highlightedDate?: Date | null
-  onDayClick?: (date: Date, isOtherMonth: boolean) => void
+  onDayClick?: (date: Date) => void
 }
 
 const MonthView: React.FC<MonthViewProps> = ({ currentDate, events, highlightedDate, onDayClick }) => {
@@ -37,10 +37,10 @@ const MonthView: React.FC<MonthViewProps> = ({ currentDate, events, highlightedD
     })
   }
 
-  const handleDayClick = (day: Date, isCurrentMonth: boolean): void => {
+  const handleDayClick = (day: Date): void => {
     if (onDayClick) {
       // При клике на любой день - открываем представление "День" для этого дня
-      onDayClick(day, !isCurrentMonth)
+      onDayClick(day)
     }
   }
 
@@ -79,7 +79,7 @@ const MonthView: React.FC<MonthViewProps> = ({ currentDate, events, highlightedD
               }}
               onClick={() => {
                 // Любой клик по ячейке дня переводит в представление "День"
-                handleDayClick(day, isCurrentMonth)
+                handleDayClick(day)
               }}
             >
               <span className="day-number">{format(day, 'd')}</span>

@@ -1,7 +1,6 @@
 import React from 'react'
+import { ViewMode } from '../../constants'
 import './NavigationBar.css'
-
-type ViewMode = 'month' | 'year' | 'day'
 
 interface NavigationBarProps {
   viewMode: ViewMode
