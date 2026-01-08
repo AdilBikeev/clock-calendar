@@ -554,7 +554,7 @@ const CalendarApp: React.FC = () => {
         <input
           type="text"
           className="quick-add-event-input"
-          placeholder="Добавьте название события"
+          placeholder="Название события"
           value={quickEventTitle}
           onChange={(e) => setQuickEventTitle(e.target.value)}
           onKeyPress={(e) => {

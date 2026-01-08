@@ -78,11 +78,12 @@ const EventModal: React.FC<EventModalProps> = ({
         // Предотвращаем движение через компенсацию
         fixOverlayPosition()
         // Сбрасываем scroll visual viewport если он изменился
-        if (window.visualViewport.scrollTop !== lastVisualViewportScrollY) {
+        const scrollTop = (window.visualViewport as any).scrollTop
+        if (scrollTop !== undefined && scrollTop !== lastVisualViewportScrollY) {
           // Не можем напрямую сбросить scrollTop visual viewport,
           // но можем компенсировать движение
           fixOverlayPosition()
-          lastVisualViewportScrollY = window.visualViewport.scrollTop
+          lastVisualViewportScrollY = scrollTop
         }
       }
     }
@@ -418,7 +419,7 @@ const EventModal: React.FC<EventModalProps> = ({
                 setTitleError(false)
               }
             }}
-            autoFocus
+            autoFocus={!event} // Автофокус только при создании нового события
           />
 
           <div className="event-modal-field">
