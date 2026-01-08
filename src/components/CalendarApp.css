@@ -1,3 +1,57 @@
+.top-navigation-bar {
+  width: 100%;
+  max-width: 800px;
+  box-sizing: border-box;
+  flex-shrink: 0;
+  background: transparent;
+}
+
+.top-nav-content {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  width: 100%;
+}
+
+.top-nav-spacer {
+  flex: 1;
+}
+
+.settings-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  color: #1d1d1f;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  user-select: none;
+  outline: none;
+  -webkit-tap-highlight-color: transparent;
+  padding: 0;
+}
+
+.settings-button:hover {
+  background: #f5f5f7;
+}
+
+.settings-button:active {
+  background: #e8e8ed;
+}
+
+.settings-button:focus {
+  outline: none;
+}
+
+.settings-button:focus-visible {
+  outline: none;
+  box-shadow: none;
+}
+
 .calendar-content-wrapper {
   display: flex;
   flex-direction: column;
@@ -47,7 +101,6 @@
 }
 
 .calendar-app:has(.day-view) {
-  margin-top: max(48px, env(safe-area-inset-top, 0px) + 48px);
   margin-bottom: 0px;
   overflow: hidden;
   /* Ограничиваем высоту, чтобы не заходить за navigation-bar и quick-add-event-bar */

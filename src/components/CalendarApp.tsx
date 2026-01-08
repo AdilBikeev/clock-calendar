@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react'
 import { format, isSameDay, startOfMonth } from 'date-fns'
 import { ru } from 'date-fns/locale'
 import SimpleBar from 'simplebar-react'
+import { FaCog } from 'react-icons/fa'
 import MonthView from './MonthView'
 import YearView from './YearView'
 import DayView from './DayView'
@@ -472,6 +473,17 @@ const CalendarApp: React.FC = () => {
 
   return (
     <>
+    <div className="top-navigation-bar">
+      <div className="top-nav-content">
+        <div className="top-nav-spacer"></div>
+        <button 
+          className="settings-button" 
+          aria-label="Настройки календаря"
+        >
+          <FaCog size={24} />
+        </button>
+      </div>
+    </div>
     <div className="calendar-content-wrapper">
       <div className="calendar-app" ref={calendarAppRef}>
       <div className="calendar-header">
