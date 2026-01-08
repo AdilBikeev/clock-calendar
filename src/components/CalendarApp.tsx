@@ -8,6 +8,7 @@ import YearView from './YearView'
 import DayView from './DayView'
 import NavigationBar from './NavigationBar'
 import EventModal from './EventModal'
+import SettingsPanel from './SettingsPanel'
 import { Event, EVENT_COLORS } from '../types/event'
 import 'simplebar-react/dist/simplebar.min.css'
 import './CalendarApp.css'
@@ -35,6 +36,7 @@ const CalendarApp: React.FC = () => {
   const [isEventsLoaded, setIsEventsLoaded] = useState<boolean>(false)
   const [quickEventTitle, setQuickEventTitle] = useState<string>('')
   const [defaultAllDay, setDefaultAllDay] = useState<boolean>(false)
+  const [isSettingsOpen, setIsSettingsOpen] = useState<boolean>(false)
 
   // Загрузка событий из localStorage
   useEffect(() => {
@@ -450,6 +452,15 @@ const CalendarApp: React.FC = () => {
     // Он будет сброшен при изменении представления или даты
   }
 
+  const handleSettingsToggle = (): void => {
+    setIsSettingsOpen(!isSettingsOpen)
+  }
+
+  const handleAddAccount = (): void => {
+    // Заглушка, логика будет добавлена позже
+    console.log('Добавить аккаунт')
+  }
+
   // Сбрасываем фокус при изменении представления или даты
   useEffect(() => {
     if (viewMode !== 'day') {
@@ -473,18 +484,20 @@ const CalendarApp: React.FC = () => {
 
   return (
     <>
-    <div className="top-navigation-bar">
-      <div className="top-nav-content">
-        <div className="top-nav-spacer"></div>
-        <button 
-          className="settings-button" 
-          aria-label="Настройки календаря"
-        >
-          <FaCog size={24} />
-        </button>
+    <div className="app-wrapper">
+      <div className="top-navigation-bar">
+        <div className="top-nav-content">
+          <div className="top-nav-spacer"></div>
+          <button 
+            className="settings-button" 
+            aria-label="Настройки календаря"
+            onClick={handleSettingsToggle}
+          >
+            <FaCog size={24} />
+          </button>
+        </div>
       </div>
-    </div>
-    <div className="calendar-content-wrapper">
+      <div className="calendar-content-wrapper">
       <div className="calendar-app" ref={calendarAppRef}>
       <div className="calendar-header">
         <div className="header-navigation">
@@ -588,7 +601,7 @@ const CalendarApp: React.FC = () => {
         </button>
       </div>
       )}
-    </div>
+      </div>
 
       <NavigationBar 
         viewMode={viewMode} 
@@ -599,6 +612,13 @@ const CalendarApp: React.FC = () => {
           }
           setViewMode(mode)
         }}
+      />
+    </div>
+
+      <SettingsPanel
+        isOpen={isSettingsOpen}
+        onClose={handleSettingsToggle}
+        onAddAccount={handleAddAccount}
       />
 
       <EventModal
