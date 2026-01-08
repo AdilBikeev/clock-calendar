@@ -6,7 +6,15 @@
   justify-content: center;
   align-items: center;
   padding: 10px;
-  padding-bottom: 70px;
+  /* padding-bottom учитывает навигационную панель + отступ снизу белого квадрата (равный padding-top навигационной панели) */
+  padding-bottom: calc(90px + 20px + 10px); /* навигационная панель (90px) + отступ (20px) + нижний padding (10px) */
   box-sizing: border-box;
+}
+
+@media (max-width: 768px) {
+  .app {
+    /* padding-bottom учитывает навигационную панель + отступ снизу белого квадрата (равный padding-top навигационной панели) + safe area */
+    padding-bottom: calc(100px + 24px + 10px + env(safe-area-inset-bottom, 0px)); /* навигационная панель (100px) + отступ (24px) + нижний padding (10px) + safe area */
+  }
 }
 

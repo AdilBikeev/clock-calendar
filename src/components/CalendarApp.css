@@ -5,7 +5,8 @@
   padding: 15px;
   width: 100%;
   max-width: 800px;
-  max-height: 100%;
+  /* Высота viewport минус навигационная панель (90px) минус отступы #root (20px) минус отступ снизу (20px, равен padding-top навигационной панели) */
+  max-height: calc(100vh - 90px - 20px - 20px);
   display: flex;
   flex-direction: column;
   transition: all 0.3s ease;
@@ -13,10 +14,22 @@
   position: relative;
   overflow: hidden;
   box-sizing: border-box;
-  margin: auto;
+  margin-bottom: 20px; /* Отступ снизу, равный padding-top навигационной панели */
+}
+
+.calendar-app:has(.year-view) {
+  margin-top: 48px;
+  margin-bottom: 0px;
+}
+
+.calendar-app:has(.month-view) {
+  /* Для месячного календаря убираем margin-bottom для правильного центрирования */
+  margin-bottom: 0;
 }
 
 .calendar-app:has(.day-view) {
+  margin-top: 48px;
+  margin-bottom: 0px;
   overflow: visible;
 }
 
@@ -223,6 +236,25 @@
 }
 
 @media (max-width: 768px) {
+  .calendar-app {
+    /* Используем 100dvh для мобильных (динамический viewport) */
+    /* Высота viewport минус навигационная панель (100px) минус отступы #root (20px) минус отступ снизу (24px, равен padding-top навигационной панели) минус safe area */
+    max-height: calc(100dvh - 100px - 20px - 24px - env(safe-area-inset-bottom, 0px));
+    margin-bottom: 24px; /* Отступ снизу, равный padding-top навигационной панели */
+  }
+  
+  /* Fallback для браузеров без поддержки 100dvh */
+  @supports not (height: 100dvh) {
+    .calendar-app {
+      max-height: calc(100vh - 100px - 20px - 24px - env(safe-area-inset-bottom, 0px));
+    }
+  }
+  
+  /* Для месячного календаря на мобильных также убираем margin-bottom */
+  .calendar-app:has(.month-view) {
+    margin-bottom: 0;
+  }
+
   .calendar-add-event-btn-header {
     display: flex;
     width: 36px;
