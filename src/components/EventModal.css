@@ -1,9 +1,12 @@
 .event-modal-overlay {
-  position: fixed;
-  top: 0;
+  position: fixed !important;
+  top: 0 !important;
   left: 0;
   right: 0;
   bottom: 0;
+  width: 100vw;
+  height: 100vh;
+  height: 100dvh; /* Dynamic viewport height для мобильных */
   background: rgba(0, 0, 0, 0.5);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
@@ -13,6 +16,12 @@
   z-index: 10000;
   padding: 20px;
   animation: overlayFadeIn 0.3s ease-out;
+  /* Предотвращаем прокрутку страницы при открытом модальном окне */
+  overflow: hidden;
+  touch-action: none;
+  /* Фиксируем позицию overlay чтобы она не двигалась при появлении клавиатуры */
+  transform: translateZ(0) !important;
+  -webkit-transform: translateZ(0) !important;
 }
 
 @keyframes overlayFadeIn {
@@ -33,12 +42,16 @@
   width: 100%;
   max-width: 600px;
   max-height: 90vh;
+  max-height: 90dvh; /* Dynamic viewport height для мобильных */
   overflow: hidden;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
   animation: modalSlideIn 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   display: flex;
   flex-direction: column;
   position: relative;
+  /* Фиксируем позицию чтобы модальное окно не двигалось при появлении клавиатуры */
+  transform: translateZ(0);
+  -webkit-transform: translateZ(0);
 }
 
 .event-modal::before {
@@ -429,13 +442,26 @@
 }
 
 @media (max-width: 600px) {
+  .event-modal-overlay {
+    padding: 10px;
+    /* Оставляем центрирование */
+    align-items: center;
+    /* Используем env() для учета safe area */
+    padding-bottom: max(10px, env(safe-area-inset-bottom, 0px) + 10px);
+  }
+
   .event-modal {
     max-width: 100%;
     border-top-left-radius: 28px;
     border-top-right-radius: 28px;
     border-bottom-left-radius: 24px;
     border-bottom-right-radius: 24px;
-    max-height: 95vh;
+    max-height: calc(90vh - 20px);
+    max-height: calc(90dvh - 20px);
+    width: 100%;
+    /* Фиксируем позицию - не двигаем при появлении клавиатуры */
+    margin: 0;
+    transform-origin: center center;
   }
   
   .event-modal::before {

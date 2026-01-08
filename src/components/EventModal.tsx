@@ -31,6 +31,137 @@ const EventModal: React.FC<EventModalProps> = ({
   const [description, setDescription] = useState<string>('')
   const [titleError, setTitleError] = useState<boolean>(false)
   const [shakeKey, setShakeKey] = useState<number>(0)
+  const modalRef = React.useRef<HTMLDivElement>(null)
+
+  // Предотвращаем движение модального окна при появлении клавиатуры
+  useEffect(() => {
+    if (!isOpen || !modalRef.current) return
+
+    const modal = modalRef.current
+    const overlay = modal.closest('.event-modal-overlay') as HTMLElement
+    
+    if (!overlay) return
+
+    // Сохраняем начальную позицию overlay при открытии
+    const getInitialTop = () => {
+      // Используем getBoundingClientRect для получения точной позиции
+      const rect = overlay.getBoundingClientRect()
+      return rect.top
+    }
+    
+    let initialTop = getInitialTop()
+    let lastScrollY = window.scrollY
+    let lastVisualViewportScrollY = 0
+
+    // Функция для фиксации позиции overlay
+    const fixOverlayPosition = () => {
+      const currentTop = overlay.getBoundingClientRect().top
+      const offsetY = currentTop - initialTop
+      
+      // Если overlay сдвинулся более чем на 1px, компенсируем это
+      if (Math.abs(offsetY) > 1) {
+        // Используем transform для компенсации, так как он не влияет на layout
+        const currentTransform = overlay.style.transform || 'translateY(0)'
+        const currentY = currentTransform.match(/translateY\((-?\d+(?:\.\d+)?)px\)/)?.[1] || '0'
+        const newY = parseFloat(currentY) - offsetY
+        overlay.style.transform = `translateY(${newY}px)`
+        
+        // Обновляем initialTop чтобы следующая проверка была относительно новой позиции
+        initialTop = overlay.getBoundingClientRect().top + offsetY
+      }
+    }
+    
+    const handleViewportScroll = () => {
+      if (window.visualViewport) {
+        // Предотвращаем движение через компенсацию
+        fixOverlayPosition()
+        // Сбрасываем scroll visual viewport если он изменился
+        if (window.visualViewport.scrollTop !== lastVisualViewportScrollY) {
+          // Не можем напрямую сбросить scrollTop visual viewport,
+          // но можем компенсировать движение
+          fixOverlayPosition()
+          lastVisualViewportScrollY = window.visualViewport.scrollTop
+        }
+      }
+    }
+
+    const handleViewportResize = () => {
+      fixOverlayPosition()
+    }
+
+    // Предотвращаем автоматическую прокрутку браузера при фокусе на полях ввода
+    const handleFocus = (e: FocusEvent) => {
+      const target = e.target as HTMLElement
+      if ((target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') && 
+          overlay.contains(target)) {
+        // Сбрасываем scroll страницы если он изменился
+        if (window.scrollY !== lastScrollY) {
+          window.scrollTo(0, lastScrollY)
+        }
+        
+        // Прокручиваем только внутри модального окна, если нужно
+        setTimeout(() => {
+          const scrollContainer = target.closest('.simplebar-content-wrapper') as HTMLElement
+          if (scrollContainer) {
+            const targetRect = target.getBoundingClientRect()
+            const containerRect = scrollContainer.getBoundingClientRect()
+            
+            if (targetRect.bottom > containerRect.bottom) {
+              const scrollAmount = targetRect.bottom - containerRect.bottom + 20
+              scrollContainer.scrollTop += scrollAmount
+            } else if (targetRect.top < containerRect.top) {
+              const scrollAmount = containerRect.top - targetRect.top + 20
+              scrollContainer.scrollTop -= scrollAmount
+            }
+          }
+          // Проверяем и фиксируем позицию после прокрутки
+          fixOverlayPosition()
+        }, 150)
+      }
+    }
+
+    // Подписываемся на события
+    if (window.visualViewport) {
+      window.visualViewport.addEventListener('scroll', handleViewportScroll)
+      window.visualViewport.addEventListener('resize', handleViewportResize)
+      document.addEventListener('focusin', handleFocus, true)
+      
+      // Периодически проверяем и фиксируем позицию
+      const positionCheckInterval = setInterval(fixOverlayPosition, 50)
+      
+      return () => {
+        window.visualViewport?.removeEventListener('scroll', handleViewportScroll)
+        window.visualViewport?.removeEventListener('resize', handleViewportResize)
+        document.removeEventListener('focusin', handleFocus, true)
+        clearInterval(positionCheckInterval)
+        // Сбрасываем стили при закрытии
+        overlay.style.transform = ''
+      }
+    }
+  }, [isOpen])
+
+  // Предотвращаем прокрутку страницы при открытом модальном окне
+  useEffect(() => {
+    if (!isOpen) return
+
+    // Сохраняем текущую позицию прокрутки
+    const scrollY = window.scrollY
+    
+    // Фиксируем позицию body
+    document.body.style.position = 'fixed'
+    document.body.style.top = `-${scrollY}px`
+    document.body.style.width = '100%'
+    document.body.style.overflow = 'hidden'
+
+    return () => {
+      // Восстанавливаем прокрутку при закрытии
+      document.body.style.position = ''
+      document.body.style.top = ''
+      document.body.style.width = ''
+      document.body.style.overflow = ''
+      window.scrollTo(0, scrollY)
+    }
+  }, [isOpen])
 
   useEffect(() => {
     if (event) {
@@ -238,7 +369,7 @@ const EventModal: React.FC<EventModalProps> = ({
 
   return (
     <div className="event-modal-overlay" onClick={handleCancel}>
-      <div className="event-modal" onClick={(e) => e.stopPropagation()}>
+      <div ref={modalRef} className="event-modal" onClick={(e) => e.stopPropagation()}>
         <div className="event-modal-header">
           <button 
             type="button"
