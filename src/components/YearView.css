@@ -35,7 +35,7 @@
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   grid-template-rows: repeat(4, auto);
-  gap: 6px;
+  gap: 0;
   width: 100%;
   height: auto;
   min-height: 0;
@@ -128,7 +128,7 @@
 .mini-weekdays {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
-  gap: 1px;
+  gap: 0;
   margin-bottom: 2px;
 }
 
@@ -153,7 +153,7 @@
 .mini-days-grid {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
-  gap: 1px;
+  gap: 0;
 }
 
 .mini-day-cell {
@@ -247,7 +247,7 @@
 /* Компактный вид для мобильных устройств */
 @media (max-width: 768px) {
   .year-grid {
-    gap: 4px;
+    gap: 0;
   }
   
   .mini-month {
@@ -276,7 +276,7 @@
 
 @media (max-width: 480px) {
   .year-grid {
-    gap: 2px;
+    gap: 0;
   }
   
   .mini-month {
@@ -309,7 +309,7 @@
 
 @media (max-width: 360px) {
   .year-grid {
-    gap: 1px;
+    gap: 0;
   }
   
   .mini-month {
