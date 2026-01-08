@@ -3,6 +3,7 @@
   max-width: 100%;
   animation: monthSlideIn 0.5s cubic-bezier(0.4, 0, 0.2, 1);
   box-sizing: border-box;
+  padding: 8px;
 }
 
 @keyframes monthSlideIn {
@@ -48,9 +49,10 @@
 
 .weekdays {
   display: grid;
-  grid-template-columns: repeat(7, 1fr);
+  grid-template-columns: repeat(7, minmax(0, 1fr));
   gap: 0;
   margin-bottom: 8px;
+  width: 100%;
 }
 
 .weekday {
@@ -60,6 +62,13 @@
   color: #86868b;
   text-transform: uppercase;
   letter-spacing: 0.5px;
+  padding: 8px 4px;
+  box-sizing: border-box;
+  /* Компенсирующий border для идеального выравнивания с .day-cell */
+  border: 2px solid transparent;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
 }
 
 .weekday.saturday,
@@ -69,8 +78,9 @@
 
 .days-grid {
   display: grid;
-  grid-template-columns: repeat(7, 1fr);
+  grid-template-columns: repeat(7, minmax(0, 1fr));
   gap: 0;
+  width: 100%;
 }
 
 .day-cell {
@@ -85,6 +95,12 @@
   position: relative;
   animation: dayCellFadeIn 0.4s cubic-bezier(0.4, 0, 0.2, 1) both;
   padding: 8px 4px;
+  box-sizing: border-box;
+  /* Компенсирующий border для идеального выравнивания с .weekday */
+  border: 2px solid transparent;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
   /* Убеждаемся, что весь элемент кликабелен */
   pointer-events: auto;
   z-index: 1;
@@ -137,6 +153,9 @@
   /* Убеждаемся, что весь элемент кликабелен */
   pointer-events: auto;
   z-index: 1;
+  /* Обеспечиваем одинаковую ширину с другими ячейками */
+  width: 100%;
+  box-sizing: border-box;
 }
 
 @keyframes todayPulse {
@@ -243,6 +262,7 @@
 
   .weekday {
     font-size: 11px;
+    padding: 6px 2px; /* Такой же padding как у .day-cell на мобильных */
   }
 
   .days-grid {
