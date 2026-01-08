@@ -1,10 +1,10 @@
 .app {
   width: 100%;
-  flex: 1;
-  min-height: 0;
+  height: 100vh;
+  height: 100dvh; /* Динамический viewport height для мобильных */
   display: flex;
   flex-direction: column;
-  justify-content: flex-start;
+  justify-content: space-between;
   align-items: center;
   padding: 10px;
   padding-bottom: calc(90px + 10px); /* Отступ для навигационной панели (90px) + padding */
@@ -12,9 +12,22 @@
   overflow: hidden;
 }
 
+@supports not (height: 100dvh) {
+  .app {
+    height: 100vh;
+  }
+}
+
 @media (max-width: 768px) {
   .app {
+    height: 100dvh;
     padding-bottom: calc(100px + 10px + env(safe-area-inset-bottom, 0px)); /* Отступ для навигационной панели (100px) + padding + safe area */
+  }
+
+  @supports not (height: 100dvh) {
+    .app {
+      height: 100vh;
+    }
   }
 }
 

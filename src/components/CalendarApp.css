@@ -1,3 +1,22 @@
+.calendar-content-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex: 1 1 auto;
+  min-height: 0;
+  width: 100%;
+  gap: 12px;
+  box-sizing: border-box;
+  padding: 0;
+  overflow: hidden;
+}
+
+/* Для дневного представления: контейнер не центрируется, контент должен скроллиться */
+.calendar-content-wrapper:has(.calendar-app:has(.day-view)) {
+  justify-content: flex-start;
+}
+
 .calendar-app {
   background: #ffffff;
   border-radius: 15px;
@@ -11,9 +30,9 @@
   position: relative;
   overflow: hidden;
   box-sizing: border-box;
-  margin-bottom: 12px; /* Отступ снизу перед quick-add-event-bar */
+  margin-bottom: 0;
   /* Высота будет ограничена через flex */
-  flex: 1 1 auto;
+  flex: 0 1 auto;
   min-height: 0;
   max-height: 100%;
 }
@@ -220,32 +239,15 @@
   display: flex;
   align-items: center;
   width: 100%;
+  max-width: 800px;
   padding: 12px 15px;
   gap: 12px;
   background: #f5f5f7;
   box-sizing: border-box;
-  flex-shrink: 1; /* Может сжиматься при необходимости */
+  flex-shrink: 0; /* Не сжимается, сохраняет свой размер */
   min-height: 72px; /* Минимальная высота: padding (24px) + высота элементов (48px) */
 }
 
-/* Для дневного представления: quick-add-event-bar не должен заходить за navigation-bar */
-.app:has(.calendar-app:has(.day-view)) .quick-add-event-bar {
-  /* Максимальная высота с учетом navigation-bar */
-  /* Высота viewport - navigation-bar (90px) - отступы */
-  max-height: calc(100vh - 90px - 20px);
-  /* Позиционируем так, чтобы не заходить за navigation-bar */
-  margin-bottom: 0;
-  /* Может сжиматься при необходимости, но сохраняя padding */
-  flex-shrink: 1;
-}
-
-/* Для дневного представления: quick-add-event-bar не должен заходить за navigation-bar */
-.app:has(.calendar-app:has(.day-view)) .quick-add-event-bar {
-  /* Максимальная высота с учетом navigation-bar */
-  max-height: calc(100vh - 90px - env(safe-area-inset-bottom, 0px));
-  /* Позиционируем так, чтобы не заходить за navigation-bar */
-  margin-bottom: 0;
-}
 
 .quick-add-event-input {
   flex: 1;
@@ -299,16 +301,15 @@
 }
 
 @media (max-width: 768px) {
+  .calendar-content-wrapper {
+    gap: 12px;
+  }
+
   .calendar-app {
-    margin-bottom: 12px; /* Отступ снизу перед quick-add-event-bar */
-    flex: 1 1 auto;
+    margin-bottom: 0;
+    flex: 0 1 auto;
     min-height: 0;
     max-height: 100%;
-  }
-  
-  /* Для месячного календаря на мобильных также убираем margin-bottom */
-  .calendar-app:has(.month-view) {
-    margin-bottom: 0;
   }
   
   /* Для дневного представления на мобильных: ограничиваем высоту с учетом navigation-bar и quick-add-event-bar */
@@ -325,26 +326,13 @@
       max-height: calc(100vh - 100px - 72px - 20px - env(safe-area-inset-bottom, 0px));
     }
   }
-  
-  /* Для quick-add-event-bar на мобильных при дневном представлении */
-  .app:has(.calendar-app:has(.day-view)) .quick-add-event-bar {
-    /* Максимальная высота с учетом navigation-bar на мобильных */
-    max-height: calc(100dvh - 100px - 20px - env(safe-area-inset-bottom, 0px));
-    margin-bottom: 0;
-    flex-shrink: 1;
-  }
-  
-  @supports not (height: 100dvh) {
-    .app:has(.calendar-app:has(.day-view)) .quick-add-event-bar {
-      max-height: calc(100vh - 100px - 20px - env(safe-area-inset-bottom, 0px));
-    }
-  }
 
   .quick-add-event-bar {
     padding: 10px 12px;
     gap: 10px;
-    flex-shrink: 1;
+    flex-shrink: 0;
     min-height: 72px; /* Минимальная высота на мобильных */
+    max-width: 800px;
   }
 
   .quick-add-event-input {

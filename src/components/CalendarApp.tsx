@@ -472,7 +472,8 @@ const CalendarApp: React.FC = () => {
 
   return (
     <>
-    <div className="calendar-app" ref={calendarAppRef}>
+    <div className="calendar-content-wrapper">
+      <div className="calendar-app" ref={calendarAppRef}>
       <div className="calendar-header">
         <div className="header-navigation">
           <button 
@@ -525,7 +526,7 @@ const CalendarApp: React.FC = () => {
             onDayClick={handleDayClick}
           />
         ) : viewMode === 'year' ? (
-          <SimpleBar style={{ maxHeight: '100%', flex: '1 1 auto', minHeight: 0 }}>
+          <SimpleBar style={{ maxHeight: '100%', flex: '1 1 auto', minHeight: 0, padding: '8px' }}>
             <YearView 
               key={`year-${currentDate.getFullYear()}`}
               currentDate={currentDate} 
@@ -545,7 +546,7 @@ const CalendarApp: React.FC = () => {
           />
         )}
       </div>
-    </div>
+      </div>
 
       {/* Панель быстрого добавления событий (только для месячного и дневного календаря) */}
       {(viewMode === 'month' || viewMode === 'day') && (
@@ -575,6 +576,7 @@ const CalendarApp: React.FC = () => {
         </button>
       </div>
       )}
+    </div>
 
       <NavigationBar 
         viewMode={viewMode} 
