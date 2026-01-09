@@ -1,5 +1,4 @@
 import React from 'react'
-import { FaGoogle } from 'react-icons/fa'
 import './AccountModal.css'
 
 interface AccountModalProps {
@@ -39,7 +38,11 @@ const AccountModal: React.FC<AccountModalProps> = ({ isOpen, onClose, onSelectAc
               aria-label="Добавить Google аккаунт"
             >
               <div className="account-option-icon google-icon">
-                <FaGoogle size={24} />
+                <img 
+                  src="/icons/google-icon.svg" 
+                  alt="Google"
+                  className="google-icon-img"
+                />
               </div>
               <div className="account-option-info">
                 <div className="account-option-name">Google Calendar</div>

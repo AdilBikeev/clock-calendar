@@ -152,7 +152,16 @@
 
 .google-icon {
   background: #ffffff;
-  color: #4285f4;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.google-icon-img {
+  width: 24px;
+  height: 24px;
+  object-fit: contain;
 }
 
 .account-option-info {
