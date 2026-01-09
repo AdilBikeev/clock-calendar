@@ -424,8 +424,9 @@ const CalendarApp: React.FC = () => {
     }
   }
 
-  const handleRemoveAccount = (accountId: string) => {
-    removeAccount(accountId)
+  const handleRemoveAccount = async (accountId: string) => {
+    // Удаляем аккаунт (включая выход из Google Sign-In для Google аккаунтов)
+    await removeAccount(accountId)
     // Удаляем события, связанные с этим аккаунтом
     const accountEvents = events.filter((e) => e.id.startsWith(`google-${accountId}-`))
     accountEvents.forEach((event) => {

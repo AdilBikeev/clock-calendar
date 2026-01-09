@@ -185,6 +185,8 @@ export const signInWithGoogle = async (): Promise<{
       logAndroid('Проверка Google Play Services...')
       await GoogleSignIn.hasPlayServices()
       logAndroid('Google Play Services доступны, выполнение signIn()...')
+      // signIn() автоматически выполнит signOut() перед авторизацией,
+      // чтобы пользователь мог выбрать другой аккаунт
       userInfo = await GoogleSignIn.signIn()
       logAndroid('signIn() выполнен, получен userInfo:', {
         hasUser: !!userInfo,

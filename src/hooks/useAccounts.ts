@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { CalendarAccount } from '../types/account'
 import { loadAccountsFromStorage, saveAccountsToStorage } from '../services/accountStorageService'
 import { initiateGoogleOAuth, handleGoogleOAuthCallback, getGoogleCalendarEvents, convertGoogleEventToEvent } from '../services/googleCalendarService'
+import { signOut as signOutGoogle } from '../services/googleSignInService'
 import { Event } from '../types/event'
 
 /**
@@ -52,10 +53,27 @@ export const useAccounts = () => {
 
   /**
    * Удаляет аккаунт
+   * Для Google аккаунтов также выполняет выход из Google Sign-In
    */
-  const removeAccount = useCallback((accountId: string) => {
+  const removeAccount = useCallback(async (accountId: string) => {
+    // Находим аккаунт перед удалением
+    const accountToRemove = accounts.find((account) => account.id === accountId)
+    
+    // Если это Google аккаунт, выходим из Google Sign-In
+    if (accountToRemove?.type === 'google') {
+      try {
+        console.log('[useAccounts] Удаление Google аккаунта, выполнение signOut...')
+        await signOutGoogle()
+        console.log('[useAccounts] signOut выполнен успешно')
+      } catch (error) {
+        // Логируем ошибку, но не блокируем удаление аккаунта
+        console.warn('[useAccounts] Ошибка при выполнении signOut (не критично):', error)
+      }
+    }
+    
+    // Удаляем аккаунт из списка
     setAccounts((prevAccounts) => prevAccounts.filter((account) => account.id !== accountId))
-  }, [])
+  }, [accounts])
 
   /**
    * Инициирует процесс добавления Google аккаунта
