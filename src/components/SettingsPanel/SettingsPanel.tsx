@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react'
-import { FaGoogle, FaTrash, FaPlus } from 'react-icons/fa'
+import { FaGoogle, FaTrash, FaPlus, FaSync } from 'react-icons/fa'
 import './SettingsPanel.css'
 import { CalendarAccount, AccountType } from '../../types/account'
 import ConfirmModal from '../ConfirmModal/ConfirmModal'
@@ -47,6 +47,11 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
     setAccountToRemove(null)
   }
 
+  const handleSyncClick = () => {
+    // TODO: Реализовать логику синхронизации
+    console.log('Синхронизация запущена')
+  }
+
   const getAccountIcon = (type: string) => {
     switch (type) {
       case 'google':
@@ -83,7 +88,17 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
         </div>
         <div className="settings-panel-content">
           <div className="settings-section">
-            <h3 className="settings-section-title">Синхронизация</h3>
+            <div className="settings-section-header">
+              <h3 className="settings-section-title">Синхронизация</h3>
+              <button
+                className="settings-sync-button"
+                onClick={handleSyncClick}
+                aria-label="Синхронизировать"
+                title="Синхронизировать"
+              >
+                <FaSync size={14} />
+              </button>
+            </div>
             {accounts.length === 0 ? (
               hasAvailableServices && (
                 <button 
