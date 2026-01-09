@@ -24,6 +24,10 @@ export const useAccounts = () => {
     if (!isAccountsLoaded) {
       return
     }
+    console.log('[useAccounts] Сохранение аккаунтов в localStorage:', {
+      accountsCount: accounts.length,
+      accounts: accounts.map(a => ({ id: a.id, email: a.email })),
+    })
     saveAccountsToStorage(accounts)
   }, [accounts, isAccountsLoaded])
 
@@ -31,12 +35,22 @@ export const useAccounts = () => {
    * Добавляет новый аккаунт
    */
   const addAccount = useCallback((account: CalendarAccount) => {
+    console.log('[useAccounts] addAccount вызван:', {
+      accountId: account.id,
+      email: account.email,
+      hasAccessToken: !!account.accessToken,
+    })
+    
     setAccounts((prevAccounts) => {
       // Проверяем, нет ли уже такого аккаунта
       if (prevAccounts.some((a) => a.id === account.id || a.email === account.email)) {
+        console.log('[useAccounts] Аккаунт уже существует, пропускаем добавление')
         return prevAccounts
       }
-      return [...prevAccounts, account]
+      
+      const newAccounts = [...prevAccounts, account]
+      console.log('[useAccounts] Аккаунт добавлен, новое количество аккаунтов:', newAccounts.length)
+      return newAccounts
     })
   }, [])
 

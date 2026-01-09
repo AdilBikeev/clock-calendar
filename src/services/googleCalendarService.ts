@@ -567,11 +567,11 @@ export const initiateGoogleOAuth = async (accountId: string): Promise<void> => {
           expiresIn: 3600,
         }))
         
-        logOAuth('Результат сохранен, ожидание обработки в CalendarApp')
+        logOAuth('Результат сохранен, отправка события для обработки...')
         
         // Вызываем событие для обработки результата
         // Это позволит CalendarApp обработать результат немедленно
-        window.dispatchEvent(new CustomEvent('google-native-auth-success', {
+        const event = new CustomEvent('google-native-auth-success', {
           detail: {
             state,
             result: {
@@ -582,7 +582,15 @@ export const initiateGoogleOAuth = async (accountId: string): Promise<void> => {
               expiresIn: 3600,
             }
           }
-        }))
+        })
+        
+        // Отправляем событие синхронно, чтобы оно обработалось немедленно
+        window.dispatchEvent(event)
+        logOAuth('Событие отправлено, ожидание обработки...')
+        
+        // Даем время на обработку события перед возвратом
+        // Это гарантирует, что аккаунт будет добавлен до завершения функции
+        await new Promise(resolve => setTimeout(resolve, 100))
         
         return
       } else {

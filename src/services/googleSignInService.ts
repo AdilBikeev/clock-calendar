@@ -179,21 +179,44 @@ export const signInWithGoogle = async (): Promise<{
         email: userInfo?.user?.email,
         name: userInfo?.user?.name,
       })
+      
+      // Если пользователь уже авторизован, но мы вызываем signInWithGoogle,
+      // это означает, что нужно добавить аккаунт
+      // Поэтому мы все равно получаем токены и возвращаем результат
+      // для обработки и добавления аккаунта
     } else {
       logAndroid('Пользователь не авторизован, начало процесса авторизации...')
       // Выполняем авторизацию
       logAndroid('Проверка Google Play Services...')
       await GoogleSignIn.hasPlayServices()
       logAndroid('Google Play Services доступны, выполнение signIn()...')
-      // signIn() автоматически выполнит signOut() перед авторизацией,
-      // чтобы пользователь мог выбрать другой аккаунт
-      userInfo = await GoogleSignIn.signIn()
-      logAndroid('signIn() выполнен, получен userInfo:', {
-        hasUser: !!userInfo,
-        hasUserData: !!userInfo?.user,
-        email: userInfo?.user?.email,
-        name: userInfo?.user?.name,
-      })
+      
+      // ВАЖНО: signIn() в нативном плагине уже выполняет signOut() перед авторизацией
+      // Поэтому нам не нужно вызывать signOut() здесь
+      try {
+        logAndroid('Вызов GoogleSignIn.signIn()...')
+        logAndroid('Ожидание результата signIn() (может занять время, пока пользователь выберет аккаунт)...')
+        
+        // signIn() открывает Activity для выбора аккаунта
+        // Результат вернется через handleOnActivityResult в нативном коде
+        userInfo = await GoogleSignIn.signIn()
+        
+        logAndroid('signIn() выполнен успешно, получен userInfo:', {
+          hasUser: !!userInfo,
+          hasUserData: !!userInfo?.user,
+          email: userInfo?.user?.email,
+          name: userInfo?.user?.name,
+          hasServerAuthCode: !!userInfo?.serverAuthCode,
+        })
+      } catch (signInError: any) {
+        logAndroid('ОШИБКА при вызове signIn():', {
+          message: signInError?.message,
+          code: signInError?.code,
+          error: String(signInError),
+          stack: signInError?.stack,
+        })
+        throw signInError
+      }
     }
 
     if (!userInfo) {
