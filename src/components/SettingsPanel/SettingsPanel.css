@@ -52,8 +52,11 @@
 }
 
 .settings-panel-title {
-  font-size: 20px;
-  font-weight: 600;
+  font-family: var(--font-family-base);
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-semibold);
+  letter-spacing: var(--letter-spacing-tight);
+  line-height: var(--line-height-tight);
   color: #007aff;
   margin: 0;
   padding: 0;
@@ -75,13 +78,15 @@
 }
 
 .settings-section-title {
-  font-size: 14px;
-  font-weight: 500;
+  font-family: var(--font-family-base);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  letter-spacing: 0.8px;
+  line-height: var(--line-height-tight);
   color: #86868b;
   margin: 0 0 12px 0;
   padding: 0;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
 }
 
 .settings-section-button {
@@ -90,13 +95,15 @@
   background: transparent;
   border: 1px solid #e8e8ed;
   border-radius: 8px;
-  font-size: 15px;
-  font-weight: 400;
+  font-family: var(--font-family-base);
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-regular);
+  letter-spacing: var(--letter-spacing-normal);
+  line-height: var(--line-height-normal);
   color: #1d1d1f;
   cursor: pointer;
   transition: all 0.2s ease;
   text-align: left;
-  font-family: inherit;
   outline: none;
   display: flex;
   align-items: center;
@@ -129,7 +136,11 @@
   background: linear-gradient(135deg, #007aff 0%, #0051d5 100%);
   border: none;
   color: #ffffff;
-  font-weight: 500;
+  font-family: var(--font-family-base);
+  font-weight: var(--font-weight-medium);
+  font-size: var(--font-size-sm);
+  letter-spacing: var(--letter-spacing-tight);
+  line-height: var(--line-height-tight);
   padding: 10px 16px;
   border-radius: 10px;
   box-shadow: 0 1px 4px rgba(0, 122, 255, 0.2);
@@ -137,7 +148,6 @@
   justify-content: center;
   position: relative;
   overflow: hidden;
-  font-size: 14px;
 }
 
 .settings-section-button-primary::before {
@@ -250,21 +260,32 @@
 }
 
 .settings-account-name {
-  font-size: 16px;
-  font-weight: 500;
+  font-family: var(--font-family-base);
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-medium);
+  letter-spacing: var(--letter-spacing-tight);
+  line-height: var(--line-height-tight);
   color: #1d1d1f;
   margin-bottom: 4px;
 }
 
 .settings-account-email {
-  font-size: 14px;
+  font-family: var(--font-family-base);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-regular);
+  letter-spacing: var(--letter-spacing-normal);
+  line-height: var(--line-height-normal);
   color: #86868b;
   margin-bottom: 4px;
   word-break: break-all;
 }
 
 .settings-account-synced {
-  font-size: 12px;
+  font-family: var(--font-family-base);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-regular);
+  letter-spacing: var(--letter-spacing-normal);
+  line-height: var(--line-height-normal);
   color: #86868b;
   margin-top: 4px;
 }

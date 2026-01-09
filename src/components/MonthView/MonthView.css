@@ -57,11 +57,13 @@
 
 .weekday {
   text-align: center;
-  font-weight: 600;
-  font-size: 13px;
+  font-family: var(--font-family-base);
+  font-weight: var(--font-weight-semibold);
+  font-size: var(--font-size-sm);
   color: #86868b;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.8px;
+  line-height: var(--line-height-tight);
   padding: 8px 4px;
   box-sizing: border-box;
   /* Компенсирующий border для идеального выравнивания с .day-cell */
@@ -168,8 +170,10 @@
 }
 
 .day-cell.today .day-number {
+  font-family: var(--font-family-base);
   color: #007aff !important;
-  font-weight: 700;
+  font-weight: var(--font-weight-bold);
+  letter-spacing: var(--letter-spacing-tight);
   position: relative;
 }
 
@@ -234,8 +238,11 @@
 }
 
 .day-number {
-  font-size: 16px;
-  font-weight: 500;
+  font-family: var(--font-family-base);
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-medium);
+  letter-spacing: var(--letter-spacing-normal);
+  line-height: var(--line-height-tight);
   color: #1d1d1f;
   transition: all 0.2s ease;
   pointer-events: none;

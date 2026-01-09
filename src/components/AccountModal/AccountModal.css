@@ -57,8 +57,11 @@
 }
 
 .account-modal-title {
-  font-size: 20px;
-  font-weight: 600;
+  font-family: var(--font-family-base);
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-semibold);
+  letter-spacing: var(--letter-spacing-tight);
+  line-height: var(--line-height-tight);
   color: #1d1d1f;
   margin: 0;
 }
@@ -95,10 +98,13 @@
 }
 
 .account-modal-description {
-  font-size: 15px;
+  font-family: var(--font-family-base);
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-regular);
+  letter-spacing: var(--letter-spacing-normal);
+  line-height: var(--line-height-normal);
   color: #86868b;
   margin: 0 0 20px 0;
-  line-height: 1.4;
 }
 
 .account-options {
@@ -170,16 +176,22 @@
 }
 
 .account-option-name {
-  font-size: 17px;
-  font-weight: 500;
+  font-family: var(--font-family-base);
+  font-size: var(--font-size-md);
+  font-weight: var(--font-weight-medium);
+  letter-spacing: var(--letter-spacing-tight);
+  line-height: var(--line-height-tight);
   color: #1d1d1f;
   margin-bottom: 4px;
 }
 
 .account-option-description {
-  font-size: 14px;
+  font-family: var(--font-family-base);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-regular);
+  letter-spacing: var(--letter-spacing-normal);
+  line-height: var(--line-height-normal);
   color: #86868b;
-  line-height: 1.3;
 }
 
 .account-option-arrow {

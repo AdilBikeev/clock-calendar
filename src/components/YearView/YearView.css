@@ -97,19 +97,21 @@
 }
 
 .mini-month-title {
+  font-family: var(--font-family-base);
   text-align: center;
-  font-size: 11px;
-  font-weight: 500;
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-medium);
+  letter-spacing: var(--letter-spacing-tight);
+  line-height: var(--line-height-tight);
   color: #1d1d1f;
   margin-bottom: 3px;
   text-transform: capitalize;
   transition: color 0.3s ease, font-weight 0.3s ease;
-  line-height: 1.1;
 }
 
 .mini-month.selected-month .mini-month-title {
   color: #007aff;
-  font-weight: 600;
+  font-weight: var(--font-weight-semibold);
 }
 
 .mini-weekdays {
@@ -120,13 +122,15 @@
 }
 
 .mini-weekday {
+  font-family: var(--font-family-base);
   text-align: center;
   font-size: 9px;
-  font-weight: 400;
+  font-weight: var(--font-weight-regular);
+  letter-spacing: 0.5px;
+  line-height: var(--line-height-tight);
   color: #86868b;
   padding: 0;
   transition: color 0.3s ease;
-  line-height: 1;
 }
 
 .mini-weekday.saturday {
@@ -215,11 +219,13 @@
 }
 
 .mini-day-number {
+  font-family: var(--font-family-base);
   font-size: 10px;
+  font-weight: var(--font-weight-regular);
+  letter-spacing: var(--letter-spacing-normal);
+  line-height: var(--line-height-tight);
   color: #1d1d1f;
-  font-weight: 400;
   transition: color 0.3s ease, font-weight 0.3s ease;
-  line-height: 1;
 }
 
 .mini-day-cell.other-month .mini-day-number {

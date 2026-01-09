@@ -1,7 +1,8 @@
-import React, { useMemo } from 'react'
+import React, { useMemo, useState } from 'react'
 import { FaGoogle, FaTrash, FaPlus } from 'react-icons/fa'
 import './SettingsPanel.css'
 import { CalendarAccount, AccountType } from '../../types/account'
+import ConfirmModal from '../ConfirmModal/ConfirmModal'
 
 interface SettingsPanelProps {
   isOpen: boolean
@@ -18,6 +19,9 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
   accounts,
   onRemoveAccount,
 }) => {
+  const [accountToRemove, setAccountToRemove] = useState<CalendarAccount | null>(null)
+  const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false)
+
   const availableServices: AccountType[] = ['google']
 
   // Проверяем, какие из доступных сервисов еще не добавлены
@@ -25,6 +29,23 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
     const addedServiceTypes = new Set(accounts.map(account => account.type))
     return availableServices.some(service => !addedServiceTypes.has(service))
   }, [accounts, availableServices])
+
+  const handleRemoveClick = (account: CalendarAccount) => {
+    setAccountToRemove(account)
+    setIsConfirmModalOpen(true)
+  }
+
+  const handleConfirmRemove = () => {
+    if (accountToRemove) {
+      onRemoveAccount(accountToRemove.id)
+      setAccountToRemove(null)
+    }
+  }
+
+  const handleCancelRemove = () => {
+    setIsConfirmModalOpen(false)
+    setAccountToRemove(null)
+  }
 
   const getAccountIcon = (type: string) => {
     switch (type) {
@@ -44,6 +65,15 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
 
   return (
     <>
+      <ConfirmModal
+        isOpen={isConfirmModalOpen}
+        onClose={handleCancelRemove}
+        onConfirm={handleConfirmRemove}
+        title={`Вы уверены, что хотите отключить синхронизацию с ${accountToRemove ? getAccountName(accountToRemove) : 'этим аккаунтом'}?`}
+        message="Все синхронизированные события будут удалены из календаря."
+        confirmText="Отключить"
+        cancelText="Отмена"
+      />
       {isOpen && (
         <div className="settings-overlay" onClick={onClose}></div>
       )}
@@ -97,7 +127,7 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
                       </div>
                       <button
                         className="settings-account-remove"
-                        onClick={() => onRemoveAccount(account.id)}
+                        onClick={() => handleRemoveClick(account)}
                         aria-label="Удалить аккаунт"
                         title="Удалить аккаунт"
                       >
