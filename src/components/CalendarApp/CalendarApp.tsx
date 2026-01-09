@@ -252,24 +252,16 @@ const CalendarApp: React.FC = () => {
           })
       }
     } else {
-      // Для мобильных устройств обрабатываем deep links (для веб-авторизации)
-      console.log('[CalendarApp] Настройка обработки OAuth callback для мобильных устройств')
-      
-      // Для веб-авторизации обрабатываем deep links
       const urlListener = App.addListener('appUrlOpen', (event) => {
-        console.log('[CalendarApp] Получен deep link:', event.url)
         processOAuthCallback(event.url)
       })
 
-      // Проверяем начальный URL (если приложение было открыто через deep link)
       App.getLaunchUrl().then((result) => {
         if (result?.url) {
-          console.log('[CalendarApp] Начальный URL (deep link):', result.url)
           processOAuthCallback(result.url)
         }
       })
 
-      // Cleanup
       return () => {
         urlListener.then((l) => l.remove())
       }
@@ -279,36 +271,18 @@ const CalendarApp: React.FC = () => {
 
   // Обработчик события успешной нативной авторизации
   const handleNativeAuthSuccess = useCallback(async (event: any) => {
-    const { state, result } = event.detail
-    console.log('[CalendarApp] Получено событие успешной нативной авторизации', {
-      hasState: !!state,
-      hasResult: !!result,
-      email: result?.userInfo?.email,
-      currentAccountsCount: accounts.length,
-    })
+    const { state } = event.detail
     
     try {
-      // Используем актуальную функцию
-      const newAccount = await handleGoogleOAuthSuccess('native_auth', state)
-      console.log('[CalendarApp] Нативная авторизация успешно обработана, аккаунт добавлен:', {
-        accountId: newAccount?.id,
-        email: newAccount?.email,
-      })
-      
-      // Очищаем sessionStorage после успешной обработки
+      await handleGoogleOAuthSuccess('native_auth', state)
       sessionStorage.removeItem('oauth_state')
       sessionStorage.removeItem('oauth_native_result')
-      
-      // Небольшая задержка для обновления состояния accounts
       await new Promise(resolve => setTimeout(resolve, 200))
-      
-      // Синхронизируем события
       await syncGoogleEvents()
-      console.log('[CalendarApp] События синхронизированы')
     } catch (error) {
       console.error('[CalendarApp] Ошибка обработки нативной авторизации:', error)
     }
-  }, [handleGoogleOAuthSuccess, accounts.length])
+  }, [handleGoogleOAuthSuccess, syncGoogleEvents])
 
   // Проверяем результаты нативной авторизации для Android
   const checkNativeAuth = useCallback(async () => {
@@ -320,24 +294,11 @@ const CalendarApp: React.FC = () => {
         try {
           const stateData = JSON.parse(atob(savedState))
           if (stateData.nativeAuth) {
-            console.log('[CalendarApp] Обнаружен результат нативной авторизации при монтировании, обработка...')
-            // Используем актуальную функцию
-            const newAccount = await handleGoogleOAuthSuccess('native_auth', savedState)
-            console.log('[CalendarApp] Аккаунт добавлен при монтировании:', {
-              accountId: newAccount?.id,
-              email: newAccount?.email,
-            })
-            
-            // Очищаем sessionStorage после успешной обработки
+            await handleGoogleOAuthSuccess('native_auth', savedState)
             sessionStorage.removeItem('oauth_state')
             sessionStorage.removeItem('oauth_native_result')
-            
-            // Небольшая задержка для обновления состояния accounts
             await new Promise(resolve => setTimeout(resolve, 200))
-            
-            // Синхронизируем события
             await syncGoogleEvents()
-            console.log('[CalendarApp] Результат нативной авторизации обработан при монтировании')
           }
         } catch (e) {
           console.error('[CalendarApp] Ошибка обработки сохраненного результата нативной авторизации:', e)
