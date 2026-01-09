@@ -96,9 +96,10 @@ const DayView: React.FC<DayViewProps> = ({ currentDate, events, onEventClick, hi
       return
     }
 
+    // Обновляем каждые 100ms для плавного движения всех стрелок
     const interval = setInterval(() => {
       setCurrentTime(new Date())
-    }, 1000)
+    }, 50)
 
     return () => clearInterval(interval)
   }, [isToday])
@@ -357,8 +358,12 @@ const DayView: React.FC<DayViewProps> = ({ currentDate, events, onEventClick, hi
       const now = currentTime
       const hours24 = now.getHours()
       hourAngle = timeToAngle(hours24, now.getMinutes())
-      minuteAngle = timeToAngle(hours24, now.getMinutes() + now.getSeconds() / 60)
-      secondAngle = timeToAngle(hours24, now.getMinutes() + now.getSeconds() / 60 + now.getMilliseconds() / 60000)
+      // Минутная стрелка: полный оборот за 60 минут (6 градусов на минуту)
+      const minutes = now.getMinutes() + now.getSeconds() / 60
+      minuteAngle = (minutes / 60) * 360 - 90 // -90 чтобы начать сверху
+      // Секундная стрелка: полный оборот за 60 секунд (6 градусов на секунду)
+      const seconds = now.getSeconds() + now.getMilliseconds() / 1000
+      secondAngle = (seconds / 60) * 360 - 90 // -90 чтобы начать сверху
     }
     
     return (
