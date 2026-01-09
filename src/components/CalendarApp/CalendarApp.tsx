@@ -31,6 +31,7 @@ const CalendarApp: React.FC = () => {
   const { events, saveEvent, deleteEvent, addEvent, updateEvent } = useEvents()
   const {
     accounts,
+    isAccountsLoaded,
     connectGoogleAccount,
     handleGoogleOAuthSuccess,
     syncAllAccounts,
@@ -325,9 +326,17 @@ const CalendarApp: React.FC = () => {
     }
   }, [handleNativeAuthSuccess, checkNativeAuth])
 
+  // Автоматическая синхронизация при загрузке аккаунтов (при открытии приложения)
+  useEffect(() => {
+    if (isAccountsLoaded && accounts.length > 0 && !isSyncing) {
+      syncGoogleEvents()
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isAccountsLoaded])
+
   // Синхронизируем события при изменении текущей даты или подключении нового аккаунта
   useEffect(() => {
-    if (accounts.length > 0 && !isSyncing) {
+    if (isAccountsLoaded && accounts.length > 0 && !isSyncing) {
       syncGoogleEvents()
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
