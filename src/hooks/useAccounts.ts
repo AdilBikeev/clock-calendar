@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { CalendarAccount } from '../types/account'
 import { loadAccountsFromStorage, saveAccountsToStorage } from '../services/accountStorageService'
-import { initiateGoogleOAuth, handleGoogleOAuthCallback, getGoogleCalendarEvents, refreshAccessToken, convertGoogleEventToEvent } from '../services/googleCalendarService'
+import { initiateGoogleOAuth, handleGoogleOAuthCallback, getGoogleCalendarEvents, convertGoogleEventToEvent } from '../services/googleCalendarService'
 import { Event } from '../types/event'
 
 /**
@@ -69,15 +69,45 @@ export const useAccounts = () => {
 
   /**
    * Обрабатывает OAuth callback для Google
+   * Также обрабатывает результаты нативной авторизации для Android
    */
   const handleGoogleOAuthSuccess = useCallback(
     async (code: string, state: string) => {
+      const logSuccess = (message: string, data?: any) => {
+        const timestamp = new Date().toISOString()
+        console.log(`[OAuthSuccess ${timestamp}] ${message}`, data || '')
+      }
+      
+      logSuccess('=== Обработка OAuth успешной авторизации ===', {
+        hasCode: !!code,
+        hasState: !!state,
+        codePreview: code?.substring(0, 20),
+      })
+      
       try {
         const result = await handleGoogleOAuthCallback(code, state)
         
+        logSuccess('OAuth callback обработан, получен результат:', {
+          email: result.userInfo.email,
+          hasAccessToken: !!result.accessToken,
+          hasRefreshToken: !!result.refreshToken,
+        })
+        
         // Парсим state для получения accountId
-        const stateData = JSON.parse(atob(state))
-        const accountId = stateData.accountId || `google-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+        let accountId: string
+        try {
+          const stateData = JSON.parse(atob(state))
+          accountId = stateData.accountId || `google-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+          
+          // Если это нативная авторизация, используем специальный формат ID
+          if (stateData.nativeAuth) {
+            logSuccess('Обнаружена нативная авторизация')
+          }
+        } catch (e) {
+          // Если state не парсится, создаем новый accountId
+          accountId = `google-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+          logSuccess('State не удалось распарсить, создан новый accountId')
+        }
 
         const tokenExpiry = Date.now() + (result.expiresIn * 1000)
 
@@ -93,9 +123,24 @@ export const useAccounts = () => {
           syncedAt: new Date(),
         }
 
+        logSuccess('Создание нового аккаунта:', {
+          accountId: newAccount.id,
+          email: newAccount.email,
+          hasAccessToken: !!newAccount.accessToken,
+          hasRefreshToken: !!newAccount.refreshToken,
+        })
+
         addAccount(newAccount)
+        
+        logSuccess('Аккаунт успешно добавлен')
+        
         return newAccount
-      } catch (error) {
+      } catch (error: any) {
+        logSuccess('ОШИБКА обработки OAuth:', {
+          message: error?.message,
+          error: String(error),
+          stack: error?.stack,
+        })
         throw error
       }
     },
@@ -104,6 +149,7 @@ export const useAccounts = () => {
 
   /**
    * Синхронизирует события из Google Calendar для аккаунта
+   * Автоматически запрашивает авторизацию через Google Sign In, если токен истек
    */
   const syncGoogleCalendarEvents = useCallback(
     async (
@@ -112,32 +158,46 @@ export const useAccounts = () => {
       timeMax: Date,
       existingEvents: Event[]
     ): Promise<Event[]> => {
+      const logSync = (message: string, data?: any) => {
+        const timestamp = new Date().toISOString()
+        console.log(`[Sync ${timestamp}] ${message}`, data || '')
+      }
+      
+      logSync('=== Начало синхронизации Google Calendar ===', {
+        accountId: account.id,
+        accountEmail: account.email,
+        timeMin: timeMin.toISOString(),
+        timeMax: timeMax.toISOString(),
+      })
+      
       try {
-        // Проверяем и обновляем токен если нужно
-        let accessToken = account.accessToken
-        if (account.tokenExpiry && account.tokenExpiry < Date.now() && account.refreshToken) {
-          try {
-            const tokenData = await refreshAccessToken(account.refreshToken)
-            accessToken = tokenData.access_token
-            const newTokenExpiry = Date.now() + (tokenData.expires_in * 1000)
-            updateAccount(account.id, {
-              accessToken,
-              tokenExpiry: newTokenExpiry,
-            })
-          } catch (error) {
-            throw new Error('Token refresh failed')
-          }
-        }
-
-        if (!accessToken) {
-          throw new Error('No access token available')
-        }
-
-        // Обновляем account с актуальным токеном
-        const accountWithToken = { ...account, accessToken }
-
         // Получаем события из Google Calendar
-        const googleEvents = await getGoogleCalendarEvents(accountWithToken, timeMin, timeMax)
+        // getGoogleCalendarEvents автоматически обработает авторизацию при необходимости
+        // и вызовет onAccountUpdate, если токен был обновлен
+        const googleEvents = await getGoogleCalendarEvents(
+          account,
+          timeMin,
+          timeMax,
+          (updatedAccount) => {
+            logSync('Аккаунт обновлен с новым токеном', {
+              hasAccessToken: !!updatedAccount.accessToken,
+              hasRefreshToken: !!updatedAccount.refreshToken,
+              tokenExpiry: updatedAccount.tokenExpiry,
+            })
+            
+            // Обновляем аккаунт с новым токеном
+            updateAccount(account.id, {
+              accessToken: updatedAccount.accessToken,
+              refreshToken: updatedAccount.refreshToken,
+              tokenExpiry: updatedAccount.tokenExpiry,
+              name: updatedAccount.name,
+            })
+          }
+        )
+        
+        logSync('События получены из Google Calendar', {
+          eventsCount: googleEvents.length,
+        })
 
         // Преобразуем Google события в наш формат
         const convertedEvents: Event[] = []
@@ -151,16 +211,33 @@ export const useAccounts = () => {
             convertedEvents.push(event)
           } catch (error) {
             // Пропускаем события, которые не удалось преобразовать
+            logSync('Ошибка преобразования события (пропущено)', {
+              eventId: googleEvent.id,
+              error: String(error),
+            })
           }
         }
+
+        logSync('События преобразованы', {
+          convertedCount: convertedEvents.length,
+        })
 
         // Обновляем время последней синхронизации
         updateAccount(account.id, {
           syncedAt: new Date(),
         })
 
+        logSync('Синхронизация завершена успешно', {
+          totalEvents: convertedEvents.length,
+        })
+
         return convertedEvents
-      } catch (error) {
+      } catch (error: any) {
+        logSync('ОШИБКА синхронизации', {
+          message: error?.message,
+          error: String(error),
+          stack: error?.stack,
+        })
         throw error
       }
     },

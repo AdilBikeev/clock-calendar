@@ -21,6 +21,8 @@ import { useAccounts } from '../../hooks/useAccounts'
 import { shouldUpdateCurrentDate } from '../../services/eventService'
 import { App } from '@capacitor/app'
 import { Capacitor } from '@capacitor/core'
+import { configureGoogleSignIn } from '../../services/googleSignInService'
+import { CalendarAccount } from '../../types/account'
 import 'simplebar-react/dist/simplebar.min.css'
 import './CalendarApp.css'
 
@@ -54,6 +56,21 @@ const CalendarApp: React.FC = () => {
   // Используем custom hooks для свайпов и масштабирования
   const swipeHandlers = useSwipe(calendar.goToNext, calendar.goToPrevious)
   useCalendarScale(calendarAppRef, calendarContentRef, calendar.viewMode)
+
+  // Инициализация Google Sign In при монтировании компонента
+  useEffect(() => {
+    const initGoogleSignIn = async () => {
+      try {
+        await configureGoogleSignIn()
+      } catch (error) {
+        // Google Sign In может быть недоступен (не React Native окружение)
+        // Это нормально, будет использоваться веб-авторизация
+        console.log('Google Sign In недоступен, будет использоваться веб-авторизация')
+      }
+    }
+
+    initGoogleSignIn()
+  }, [])
 
   // Обработчик создания события
   const handleCreateEvent = useCallback(() => {
@@ -104,32 +121,77 @@ const CalendarApp: React.FC = () => {
     }
   }, [calendar.currentDate, calendar.viewMode])
 
-  // Обработка OAuth callback
+  // Обработка OAuth callback через deep links
   useEffect(() => {
     const processOAuthCallback = (url: string) => {
+      console.log('[CalendarApp] Обработка OAuth callback URL:', url)
+      
       try {
-        const urlObj = new URL(url)
+        // Парсим URL (может быть кастомная схема com.clockcalendar.app://)
+        let urlObj: URL
+        try {
+          urlObj = new URL(url)
+        } catch (e) {
+          // Если не удалось распарсить как URL, пробуем извлечь параметры из строки
+          console.log('[CalendarApp] Попытка парсинга кастомной схемы URL')
+          // Извлекаем параметры из строки вида: com.clockcalendar.app://oauth/google/callback?code=...&state=...
+          const match = url.match(/[?&](code|state|error)=([^&]+)/g)
+          if (!match) {
+            console.error('[CalendarApp] Не удалось извлечь параметры из URL')
+            return
+          }
+          
+          const params: Record<string, string> = {}
+          match.forEach((param) => {
+            const [key, value] = param.substring(1).split('=')
+            params[key] = decodeURIComponent(value)
+          })
+          
+          const code = params.code
+          const state = params.state
+          const error = params.error
+
+          if (error) {
+            console.error('[CalendarApp] OAuth error:', error)
+            return
+          }
+
+          if (code && state) {
+            console.log('[CalendarApp] Параметры извлечены из кастомной схемы, обработка...')
+            handleGoogleOAuthSuccess(code, state)
+              .then(() => {
+                syncGoogleEvents()
+              })
+              .catch((error) => {
+                console.error('[CalendarApp] Ошибка обработки OAuth callback:', error)
+              })
+          }
+          return
+        }
+        
         const code = urlObj.searchParams.get('code')
         const state = urlObj.searchParams.get('state')
         const error = urlObj.searchParams.get('error')
 
         if (error) {
+          console.error('[CalendarApp] OAuth error:', error)
           return
         }
 
         if (code && state) {
+          console.log('[CalendarApp] OAuth callback параметры получены, обработка...')
           // Обрабатываем OAuth callback
           handleGoogleOAuthSuccess(code, state)
             .then(() => {
               // Синхронизируем события после успешного подключения
               syncGoogleEvents()
             })
-            .catch(() => {
-              // Ошибка обработки OAuth callback
+            .catch((error) => {
+              console.error('[CalendarApp] Ошибка обработки OAuth callback:', error)
             })
         }
       } catch (error) {
-        // Ошибка парсинга URL
+        console.error('[CalendarApp] Ошибка парсинга URL:', error)
       }
     }
 
@@ -162,26 +224,58 @@ const CalendarApp: React.FC = () => {
           })
       }
     } else {
-      // Для мобильных устройств обрабатываем deep links
-      // Browser плагин открывает OAuth в нативном всплывающем окне
-      // После авторизации Google перенаправляет на промежуточную страницу
-      // Промежуточная страница делает deep link обратно в приложение
-      // Приложение получает deep link через событие appUrlOpen
-      const urlListener = App.addListener('appUrlOpen', (event) => {
-        processOAuthCallback(event.url)
-      })
-
-      // Проверяем начальный URL (если приложение было открыто через deep link)
-      App.getLaunchUrl().then((result) => {
-        if (result?.url) {
-          processOAuthCallback(result.url)
+      // Для мобильных устройств обрабатываем deep links (для веб-авторизации)
+    // И проверяем результаты нативной авторизации (для Android)
+    console.log('[CalendarApp] Настройка обработки OAuth callback')
+    
+    // Проверяем результаты нативной авторизации для Android
+    const checkNativeAuth = () => {
+      if (Capacitor.getPlatform() === 'android') {
+        const savedState = sessionStorage.getItem('oauth_state')
+        const nativeResult = sessionStorage.getItem('oauth_native_result')
+        
+        if (savedState && nativeResult) {
+          try {
+            const stateData = JSON.parse(atob(savedState))
+            if (stateData.nativeAuth) {
+              console.log('[CalendarApp] Обнаружен результат нативной авторизации, обработка...')
+              // Используем фиктивный code для совместимости с handleGoogleOAuthSuccess
+              handleGoogleOAuthSuccess('native_auth', savedState)
+                .then(() => {
+                  syncGoogleEvents()
+                })
+                .catch((error) => {
+                  console.error('[CalendarApp] Ошибка обработки нативной авторизации:', error)
+                })
+            }
+          } catch (e) {
+            // Игнорируем ошибки парсинга
+          }
         }
-      })
-
-      // Cleanup
-      return () => {
-        urlListener.then((l) => l.remove())
       }
+    }
+    
+    // Проверяем нативную авторизацию при монтировании
+    checkNativeAuth()
+    
+    // Для веб-авторизации обрабатываем deep links
+    const urlListener = App.addListener('appUrlOpen', (event) => {
+      console.log('[CalendarApp] Получен deep link:', event.url)
+      processOAuthCallback(event.url)
+    })
+
+    // Проверяем начальный URL (если приложение было открыто через deep link)
+    App.getLaunchUrl().then((result) => {
+      if (result?.url) {
+        console.log('[CalendarApp] Начальный URL (deep link):', result.url)
+        processOAuthCallback(result.url)
+      }
+    })
+
+    // Cleanup
+    return () => {
+      urlListener.then((l) => l.remove())
+    }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])

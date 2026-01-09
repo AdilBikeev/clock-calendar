@@ -8,11 +8,27 @@ import { getAvailableColor } from '../utils/eventUtils'
 import { generatePKCEPair } from '../utils/pkceUtils'
 import { Capacitor } from '@capacitor/core'
 import { Browser } from '@capacitor/browser'
+import { ensureGoogleAuthForSync } from './googleSignInService'
 
 // Google OAuth 2.0 Configuration
-// Эти значения нужно будет настроить в Google Cloud Console
-const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || ''
-const GOOGLE_CLIENT_SECRET = import.meta.env.VITE_GOOGLE_CLIENT_SECRET || '' // Опционально: для Desktop app может потребоваться
+// Для нативных мобильных приложений используйте нативные OAuth clients (Android/iOS)
+// Они не требуют redirect URI и используют package name/Bundle ID + SHA-1 fingerprint
+// Для веб-версии используйте Web OAuth client
+const getGoogleClientId = (): string => {
+  // Для Android используем Android OAuth client (не требует redirect URI)
+  if (Capacitor.getPlatform() === 'android') {
+    return import.meta.env.VITE_GOOGLE_CLIENT_ID_ANDROID || import.meta.env.VITE_GOOGLE_CLIENT_ID || ''
+  }
+  // Для iOS используем iOS OAuth client (не требует redirect URI)
+  if (Capacitor.getPlatform() === 'ios') {
+    return import.meta.env.VITE_GOOGLE_CLIENT_ID_IOS || import.meta.env.VITE_GOOGLE_CLIENT_ID || ''
+  }
+  // Для веб-версии используем Web OAuth client
+  return import.meta.env.VITE_GOOGLE_CLIENT_ID || ''
+}
+
+const GOOGLE_CLIENT_ID = getGoogleClientId()
+const GOOGLE_CLIENT_SECRET = import.meta.env.VITE_GOOGLE_CLIENT_SECRET || '' // Только для Web/Desktop app
 
 // Логируем для отладки (только первые символы для безопасности)
 if (GOOGLE_CLIENT_SECRET) {
@@ -21,26 +37,43 @@ if (GOOGLE_CLIENT_SECRET) {
   console.warn('GOOGLE_CLIENT_SECRET не установлен. Google может требовать его для Desktop app OAuth client.')
 }
 // Определяем правильный redirect URI в зависимости от платформы
+// ВАЖНО: Google блокирует localhost/127.0.0.1 (loopback flow)
+// Для Android используем кастомную схему URL через deep links
 const getRedirectUri = (): string => {
   // Если указан явный redirect URI в переменных окружения, используем его
-  if (import.meta.env.GOOGLE_REDIRECT_URI) {
-    return import.meta.env.GOOGLE_REDIRECT_URI
+  if (import.meta.env.VITE_GOOGLE_REDIRECT_URI) {
+    return import.meta.env.VITE_GOOGLE_REDIRECT_URI
   }
 
-  // Для мобильных устройств используем промежуточную страницу
-  // Google перенаправит на эту страницу, которая сделает deep link обратно в приложение
-  // ВАЖНО: В Google Cloud Console для Desktop app OAuth client
-  // нужно добавить redirect URI: http://localhost:3000/oauth/google/callback
-  // (или ваш домен, если используете промежуточную страницу на сервере)
-  if (Capacitor.isNativePlatform()) {
-    // Используем промежуточную страницу, которая сделает deep link
-    // Промежуточная страница должна быть доступна по этому адресу
-    // Используем тот же путь, что и для веб-версии для консистентности
-    return 'http://localhost:3000/oauth/google/callback'
+  // Для Android используем кастомную схему URL
+  // Это работает через deep links и не требует localhost
+  if (Capacitor.getPlatform() === 'android') {
+    // Используем кастомную схему: com.clockcalendar.app://oauth/google/callback
+    // Это должно быть зарегистрировано в Google Cloud Console как Authorized redirect URI
+    // для Web OAuth Client (не Android Client!)
+    const androidRedirectUri = import.meta.env.VITE_MOBILE_REDIRECT_URI || 'com.clockcalendar.app://oauth/google/callback'
+    console.log('[OAuth] Android redirect URI:', androidRedirectUri)
+    return androidRedirectUri
+  }
+
+  // Для iOS также можно использовать кастомную схему
+  if (Capacitor.getPlatform() === 'ios') {
+    const iosRedirectUri = import.meta.env.VITE_MOBILE_REDIRECT_URI || 'com.clockcalendar.app://oauth/google/callback'
+    console.log('[OAuth] iOS redirect URI:', iosRedirectUri)
+    return iosRedirectUri
   }
 
   // Для веб-приложения используем стандартный URL
-  return `${window.location.origin}/oauth/google/callback`
+  // ВАЖНО: Не используйте localhost! Используйте публичный URL
+  const webRedirectUri = `${window.location.origin}/oauth/google/callback`
+  console.log('[OAuth] Web redirect URI:', webRedirectUri)
+  
+  // Предупреждение, если используется localhost
+  if (webRedirectUri.includes('localhost') || webRedirectUri.includes('127.0.0.1')) {
+    console.warn('[OAuth] ВНИМАНИЕ: Используется localhost redirect URI. Google может блокировать это. Используйте публичный URL или кастомную схему для мобильных приложений.')
+  }
+  
+  return webRedirectUri
 }
 
 const GOOGLE_REDIRECT_URI = getRedirectUri()
@@ -54,6 +87,9 @@ const GOOGLE_CALENDAR_API = 'https://www.googleapis.com/calendar/v3'
  * Получает URL для авторизации Google с поддержкой PKCE
  */
 export const getGoogleAuthUrl = (state: string, codeChallenge: string): string => {
+  // Логируем redirect URI для диагностики
+  console.log('Building OAuth URL with redirect URI:', GOOGLE_REDIRECT_URI)
+  
   const params = new URLSearchParams({
     client_id: GOOGLE_CLIENT_ID,
     redirect_uri: GOOGLE_REDIRECT_URI,
@@ -66,7 +102,10 @@ export const getGoogleAuthUrl = (state: string, codeChallenge: string): string =
     code_challenge_method: 'S256', // SHA256
   })
 
-  return `${GOOGLE_AUTH_URL}?${params.toString()}`
+  const authUrl = `${GOOGLE_AUTH_URL}?${params.toString()}`
+  console.log('Full OAuth URL (first 200 chars):', authUrl.substring(0, 200))
+  
+  return authUrl
 }
 
 /**
@@ -274,28 +313,102 @@ export const getCalendarList = async (accessToken: string): Promise<Array<{
 }
 
 /**
+ * Логирует информацию для Android (видно в logcat)
+ */
+const logAndroid = (message: string, data?: any) => {
+  const platform = Capacitor.getPlatform()
+  const timestamp = new Date().toISOString()
+  const logMessage = `[GoogleCalendar ${timestamp}] ${message}`
+  
+  console.log(logMessage, data || '')
+  
+  // Для Android также выводим в консоль с тегом для фильтрации в logcat
+  if (platform === 'android' && typeof console !== 'undefined') {
+    console.log(`[GoogleCalendar] ${message}`, JSON.stringify(data || {}, null, 2))
+  }
+}
+
+/**
  * Получает события из Google Calendar
+ * Автоматически запрашивает авторизацию через Google Sign In, если токен истек
  */
 export const getGoogleCalendarEvents = async (
   account: CalendarAccount,
   timeMin: Date,
-  timeMax: Date
+  timeMax: Date,
+  onAccountUpdate?: (updatedAccount: CalendarAccount) => void
 ): Promise<GoogleCalendarEvent[]> => {
-  if (!account.accessToken) {
+  logAndroid('=== Получение событий из Google Calendar ===')
+  logAndroid('Параметры запроса:', {
+    accountId: account.id,
+    accountEmail: account.email,
+    calendarId: account.calendarId || 'primary',
+    timeMin: timeMin.toISOString(),
+    timeMax: timeMax.toISOString(),
+  })
+  
+  // Проверяем и обновляем авторизацию при необходимости
+  // Это может запросить нативную авторизацию через Google Sign In
+  let authenticatedAccount = account
+  try {
+    logAndroid('Проверка и обновление авторизации...')
+    authenticatedAccount = await ensureGoogleAuthForSync(account)
+    
+    // Если аккаунт был обновлен (получен новый токен), уведомляем об этом
+    if (onAccountUpdate && authenticatedAccount !== account) {
+      logAndroid('Аккаунт обновлен, уведомление об обновлении...')
+      onAccountUpdate(authenticatedAccount)
+    }
+  } catch (error: any) {
+    logAndroid('Ошибка авторизации через Google Sign In, попытка fallback:', {
+      message: error?.message,
+      error: String(error),
+    })
+    
+    // Если не удалось авторизоваться через Google Sign In,
+    // пытаемся использовать стандартный refresh token подход
+    if (!account.accessToken) {
+      logAndroid('ОШИБКА: Нет access token и авторизация не удалась')
+      throw new Error('No access token available and authorization failed')
+    }
+
+    // Проверяем и обновляем токен если нужно (стандартный подход)
+    if (account.tokenExpiry && account.tokenExpiry < Date.now() && account.refreshToken) {
+      logAndroid('Попытка обновления токена через стандартный API...')
+      try {
+        const tokenData = await refreshAccessToken(account.refreshToken)
+        authenticatedAccount = {
+          ...account,
+          accessToken: tokenData.access_token,
+          tokenExpiry: Date.now() + (tokenData.expires_in * 1000),
+        }
+        
+        logAndroid('Токен обновлен через стандартный API')
+        
+        // Уведомляем об обновлении токена
+        if (onAccountUpdate) {
+          onAccountUpdate(authenticatedAccount)
+        }
+      } catch (refreshError: any) {
+        logAndroid('ОШИБКА обновления токена:', {
+          message: refreshError?.message,
+          error: String(refreshError),
+        })
+        throw new Error('Token refresh failed and authorization required')
+      }
+    }
+  }
+
+  if (!authenticatedAccount.accessToken) {
+    logAndroid('ОШИБКА: Нет access token после всех попыток авторизации')
     throw new Error('No access token available')
   }
 
-  // Проверяем и обновляем токен если нужно
-  let accessToken = account.accessToken
-  if (account.tokenExpiry && account.tokenExpiry < Date.now() && account.refreshToken) {
-    try {
-      const tokenData = await refreshAccessToken(account.refreshToken)
-      accessToken = tokenData.access_token
-      // Сохраняем обновленный токен - это должно быть обработано в useAccounts
-    } catch (error) {
-      throw new Error('Token refresh failed')
-    }
-  }
+  const accessToken = authenticatedAccount.accessToken
+  logAndroid('Access token получен:', {
+    tokenLength: accessToken.length,
+    tokenPreview: `${accessToken.substring(0, 20)}...${accessToken.substring(accessToken.length - 10)}`,
+  })
 
   const calendarId = account.calendarId || 'primary'
   const params = new URLSearchParams({
@@ -306,23 +419,67 @@ export const getGoogleCalendarEvents = async (
     maxResults: '2500',
   })
 
-  const response = await fetch(
-    `${GOOGLE_CALENDAR_API}/calendars/${encodeURIComponent(calendarId)}/events?${params.toString()}`,
-    {
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-      },
-    }
-  )
+  const apiUrl = `${GOOGLE_CALENDAR_API}/calendars/${encodeURIComponent(calendarId)}/events?${params.toString()}`
+  
+  logAndroid('Запрос к Google Calendar API:', {
+    url: apiUrl,
+    method: 'GET',
+    calendarId,
+    params: {
+      timeMin: timeMin.toISOString(),
+      timeMax: timeMax.toISOString(),
+      singleEvents: 'true',
+      orderBy: 'startTime',
+      maxResults: '2500',
+    },
+    hasAuthHeader: true,
+  })
+
+  const response = await fetch(apiUrl, {
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+  })
+
+  logAndroid('Ответ от Google Calendar API:', {
+    status: response.status,
+    statusText: response.statusText,
+    ok: response.ok,
+    headers: Object.fromEntries(response.headers.entries()),
+  })
 
   if (!response.ok) {
+    const errorText = await response.text()
+    let errorData: any = {}
+    try {
+      errorData = JSON.parse(errorText)
+    } catch (e) {
+      errorData = { raw: errorText }
+    }
+    
+    logAndroid('ОШИБКА запроса к Google Calendar API:', {
+      status: response.status,
+      statusText: response.statusText,
+      error: errorData,
+      errorText,
+      url: apiUrl,
+    })
+    
     if (response.status === 401) {
       throw new Error('Unauthorized - token may be expired')
     }
-    throw new Error(`Failed to fetch events: ${response.statusText}`)
+    if (response.status === 400) {
+      throw new Error(`Bad Request: ${errorData.error?.message || errorData.error || response.statusText}`)
+    }
+    throw new Error(`Failed to fetch events: ${response.statusText} (${response.status})`)
   }
 
   const data = await response.json()
+  logAndroid('События успешно получены:', {
+    itemsCount: data.items?.length || 0,
+    hasItems: !!data.items,
+  })
+  
   return data.items || []
 }
 
@@ -365,16 +522,75 @@ export const convertGoogleEventToEvent = (
 
 /**
  * Инициализирует OAuth процесс для Google с использованием PKCE
+ * ВАЖНО: Для Android использует нативную авторизацию через react-native-google-signin
+ * Для веб-версии использует стандартный OAuth flow
  */
 export const initiateGoogleOAuth = async (accountId: string): Promise<void> => {
+  const logOAuth = (message: string, data?: any) => {
+    const timestamp = new Date().toISOString()
+    console.log(`[OAuth ${timestamp}] ${message}`, data || '')
+  }
+  
+  logOAuth('=== Начало OAuth процесса ===', {
+    accountId,
+    platform: Capacitor.getPlatform(),
+    isNative: Capacitor.isNativePlatform(),
+  })
+  
+  // Для Android используем нативную авторизацию через Capacitor плагин
+  // Это НЕ требует redirect_uri и работает напрямую через Google Play Services
+  if (Capacitor.getPlatform() === 'android') {
+    logOAuth('Android платформа: используем нативную авторизацию через Capacitor плагин')
+    
+    try {
+      const { isGoogleSignInAvailable, signInWithGoogle } = await import('./googleSignInService')
+      
+      if (isGoogleSignInAvailable()) {
+        logOAuth('Google Sign In доступен, выполнение нативной авторизации')
+        
+        const result = await signInWithGoogle()
+        
+        logOAuth('Нативная авторизация успешна', {
+          email: result.userInfo.email,
+          hasAccessToken: !!result.accessToken,
+          hasRefreshToken: !!result.refreshToken,
+        })
+        
+        // Сохраняем результат для обработки в handleGoogleOAuthSuccess
+        const state = btoa(JSON.stringify({ accountId, timestamp: Date.now(), nativeAuth: true }))
+        sessionStorage.setItem('oauth_state', state)
+        sessionStorage.setItem('oauth_native_result', JSON.stringify({
+          accessToken: result.accessToken,
+          refreshToken: result.refreshToken,
+          idToken: result.idToken,
+          userInfo: result.userInfo,
+        }))
+        
+        logOAuth('Результат сохранен, ожидание обработки в CalendarApp')
+        return
+      } else {
+        logOAuth('Google Sign In недоступен, используем веб-авторизацию (fallback)')
+      }
+    } catch (error: any) {
+      logOAuth('ОШИБКА нативной авторизации, используем веб-авторизацию (fallback):', {
+        message: error?.message,
+        error: String(error),
+      })
+      // Продолжаем к веб-авторизации
+    }
+  }
+  
+  logOAuth('Используем веб-авторизацию (iOS или fallback для Android)')
+  
+  // Для веб-версии и iOS используем стандартный OAuth flow
   // Проверяем, что client_id настроен
   if (!GOOGLE_CLIENT_ID) {
     const errorMsg = 'VITE_GOOGLE_CLIENT_ID не настроен в .env файле. Пожалуйста, создайте OAuth client типа "Desktop app" в Google Cloud Console и укажите Client ID в .env файле.'
-    console.error(errorMsg)
+    logOAuth('ОШИБКА:', errorMsg)
     throw new Error(errorMsg)
   }
   
-  console.log('GOOGLE_CLIENT_ID:', GOOGLE_CLIENT_ID.substring(0, 20) + '...')
+  logOAuth('GOOGLE_CLIENT_ID:', GOOGLE_CLIENT_ID.substring(0, 20) + '...')
 
   // Генерируем PKCE пару
   const { codeVerifier, codeChallenge } = await generatePKCEPair()
@@ -390,34 +606,44 @@ export const initiateGoogleOAuth = async (accountId: string): Promise<void> => {
   // Формируем URL авторизации с code_challenge
   const authUrl = getGoogleAuthUrl(state, codeChallenge)
   
-  console.log('Initiating Google OAuth:', { authUrl, isNative: Capacitor.isNativePlatform() })
+  logOAuth('Initiating Google OAuth (Web):', { 
+    authUrl: authUrl.substring(0, 200) + '...', 
+    isNative: Capacitor.isNativePlatform(),
+    redirectUri: GOOGLE_REDIRECT_URI,
+    clientId: GOOGLE_CLIENT_ID.substring(0, 20) + '...'
+  })
   
-  // Для мобильных устройств используем Browser плагин
-  // На Android это откроет Chrome Custom Tabs (нативное всплывающее окно)
-  // На iOS это откроет Safari View Controller (нативное всплывающее окно)
-  // После авторизации промежуточная страница сделает deep link обратно в приложение
+  // Для iOS и веб-версии используем Browser плагин или стандартное перенаправление
   if (Capacitor.isNativePlatform()) {
+    // Для iOS используем Browser плагин
+    // ВАЖНО: Для iOS нужен правильный redirect URI (не localhost!)
+    if (GOOGLE_REDIRECT_URI.includes('localhost') || GOOGLE_REDIRECT_URI.includes('127.0.0.1')) {
+      logOAuth('ПРЕДУПРЕЖДЕНИЕ: Используется localhost redirect URI, что может вызвать ошибку loopback flow')
+      logOAuth('РЕКОМЕНДАЦИЯ: Используйте публичный URL или нативную авторизацию')
+    }
+    
     try {
-      // Открываем OAuth в нативном всплывающем окне
-      // presentationStyle: 'popover' делает окно всплывающим на iOS
+      // Открываем OAuth в системном браузере (Chrome Custom Tabs / Safari View Controller)
       await Browser.open({
         url: authUrl,
         presentationStyle: 'popover',
         windowName: '_self'
       })
-      console.log('Browser opened successfully')
+      logOAuth('Browser opened successfully')
     } catch (error) {
-      console.error('Error opening Browser:', error)
+      logOAuth('ОШИБКА открытия Browser:', error)
       throw new Error(`Не удалось открыть окно авторизации: ${error instanceof Error ? error.message : String(error)}`)
     }
   } else {
     // Для веб-приложения используем стандартное перенаправление
+    logOAuth('Веб-версия: перенаправление на Google OAuth')
     window.location.href = authUrl
   }
 }
 
 /**
  * Обрабатывает OAuth callback с поддержкой PKCE
+ * Также обрабатывает результаты нативной авторизации для Android
  */
 export const handleGoogleOAuthCallback = async (code: string, state: string): Promise<{
   accessToken: string
@@ -425,28 +651,89 @@ export const handleGoogleOAuthCallback = async (code: string, state: string): Pr
   expiresIn: number
   userInfo: { email: string; name: string }
 }> => {
+  const logCallback = (message: string, data?: any) => {
+    const timestamp = new Date().toISOString()
+    console.log(`[OAuthCallback ${timestamp}] ${message}`, data || '')
+  }
+  
+  logCallback('=== Обработка OAuth callback ===', {
+    hasCode: !!code,
+    hasState: !!state,
+    platform: Capacitor.getPlatform(),
+  })
+  
   // Проверяем state (защита от CSRF)
   const savedState = sessionStorage.getItem('oauth_state')
   if (!savedState || savedState !== state) {
+    logCallback('ОШИБКА: Invalid OAuth state', {
+      savedState: savedState?.substring(0, 50),
+      receivedState: state?.substring(0, 50),
+    })
     throw new Error('Invalid OAuth state')
   }
 
+  // Проверяем, является ли это результатом нативной авторизации для Android
+  try {
+    const stateData = JSON.parse(atob(state))
+    if (stateData.nativeAuth) {
+      logCallback('Обнаружен результат нативной авторизации для Android')
+      
+      const nativeResultStr = sessionStorage.getItem('oauth_native_result')
+      if (nativeResultStr) {
+        const nativeResult = JSON.parse(nativeResultStr)
+        
+        logCallback('Результат нативной авторизации получен', {
+          email: nativeResult.userInfo?.email,
+          hasAccessToken: !!nativeResult.accessToken,
+          hasRefreshToken: !!nativeResult.refreshToken,
+        })
+        
+        // Очищаем временные данные
+        sessionStorage.removeItem('oauth_state')
+        sessionStorage.removeItem('oauth_native_result')
+        
+        return {
+          accessToken: nativeResult.accessToken,
+          refreshToken: nativeResult.refreshToken,
+          expiresIn: 3600, // 1 час по умолчанию для нативной авторизации
+          userInfo: nativeResult.userInfo,
+        }
+      }
+    }
+  } catch (e) {
+    // Не нативная авторизация, продолжаем стандартный flow
+    logCallback('Стандартный OAuth flow (не нативная авторизация)')
+  }
+
+  // Стандартный OAuth flow для веб-версии и iOS
   // Получаем code_verifier из sessionStorage
   const codeVerifier = sessionStorage.getItem('oauth_code_verifier')
   if (!codeVerifier) {
+    logCallback('ОШИБКА: Code verifier not found')
     throw new Error('Code verifier not found. OAuth flow may have been interrupted.')
   }
 
+  logCallback('Обмен кода на токены через PKCE...')
+  
   // Обмениваем код на токены используя code_verifier (PKCE)
   const tokenData = await exchangeCodeForTokens(code, codeVerifier)
   
   // Проверяем, что токен получен
   if (!tokenData.access_token) {
+    logCallback('ОШИБКА: Access token не получен')
     throw new Error('Access token не получен от Google. Проверьте настройки OAuth client.')
   }
   
+  logCallback('Токены получены, получение информации о пользователе...')
+  
   // Получаем информацию о пользователе
   const userInfo = await getUserInfo(tokenData.access_token)
+
+  logCallback('OAuth callback успешно обработан', {
+    email: userInfo.email,
+    hasAccessToken: !!tokenData.access_token,
+    hasRefreshToken: !!tokenData.refresh_token,
+  })
 
   // Очищаем временные данные из sessionStorage
   sessionStorage.removeItem('oauth_state')
