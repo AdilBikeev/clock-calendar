@@ -145,8 +145,8 @@
 }
 
 .day-cell.today {
-  background: linear-gradient(135deg, #007aff 0%, #0051d5 100%);
-  color: #ffffff;
+  background: linear-gradient(135deg, #ffffff 0%, #e8f4ff 100%);
+  color: #007aff;
   border: 2px solid #007aff;
   box-shadow: 0 0 0 2px rgba(0, 122, 255, 0.2), 0 4px 12px rgba(0, 122, 255, 0.3);
   animation: todayPulse 2s ease-in-out infinite, dayCellFadeIn 0.4s cubic-bezier(0.4, 0, 0.2, 1) both;
@@ -168,7 +168,7 @@
 }
 
 .day-cell.today .day-number {
-  color: #ffffff;
+  color: #007aff !important;
   font-weight: 700;
   position: relative;
 }
@@ -247,6 +247,12 @@
 .day-cell.sunday .day-number {
   color: #ff3b30;
   font-weight: 600;
+}
+
+/* Для текущего дня цвет всегда синий, даже если это суббота/воскресенье */
+.day-cell.today.saturday .day-number,
+.day-cell.today.sunday .day-number {
+  color: #007aff !important;
 }
 
 .day-cell.other-month.saturday .day-number,

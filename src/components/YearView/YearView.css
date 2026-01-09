@@ -91,22 +91,9 @@
 }
 
 .mini-month.selected-month {
-  border: 2px solid #007aff;
-  background: rgba(0, 122, 255, 0.08);
-  box-shadow: 0 2px 8px rgba(0, 122, 255, 0.2);
-  animation: selectedMonthGlow 0.5s ease-out;
-}
-
-@keyframes selectedMonthGlow {
-  0% {
-    box-shadow: 0 2px 8px rgba(0, 122, 255, 0.2);
-  }
-  50% {
-    box-shadow: 0 4px 16px rgba(0, 122, 255, 0.4);
-  }
-  100% {
-    box-shadow: 0 2px 8px rgba(0, 122, 255, 0.2);
-  }
+  border: 2px solid transparent;
+  background: transparent;
+  box-shadow: none;
 }
 
 .mini-month-title {
@@ -189,24 +176,24 @@
 
 .mini-day-cell.today {
   border: 2px solid #007aff;
-  background: #007aff;
+  background: linear-gradient(135deg, #ffffff 0%, #e8f4ff 100%);
   position: relative;
-  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.8), 0 2px 6px rgba(0, 122, 255, 0.5);
+  box-shadow: 0 0 0 1px rgba(0, 122, 255, 0.3), 0 2px 6px rgba(0, 122, 255, 0.4);
   animation: miniTodayGlow 2s ease-in-out infinite;
   z-index: 1;
 }
 
 .mini-day-cell.today .mini-day-number {
-  color: #ffffff;
+  color: #007aff !important;
   font-weight: 600;
 }
 
 @keyframes miniTodayGlow {
   0%, 100% {
-    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.8), 0 2px 6px rgba(0, 122, 255, 0.5);
+    box-shadow: 0 0 0 1px rgba(0, 122, 255, 0.3), 0 2px 6px rgba(0, 122, 255, 0.4);
   }
   50% {
-    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.9), 0 2px 8px rgba(0, 122, 255, 0.7);
+    box-shadow: 0 0 0 1px rgba(0, 122, 255, 0.4), 0 2px 8px rgba(0, 122, 255, 0.6);
   }
 }
 
@@ -242,6 +229,12 @@
 .mini-day-cell.saturday .mini-day-number,
 .mini-day-cell.sunday .mini-day-number {
   transition: color 0.3s ease;
+}
+
+/* Для текущего дня цвет всегда синий, даже если это суббота/воскресенье */
+.mini-day-cell.today.saturday .mini-day-number,
+.mini-day-cell.today.sunday .mini-day-number {
+  color: #007aff !important;
 }
 
 /* Компактный вид для мобильных устройств */
