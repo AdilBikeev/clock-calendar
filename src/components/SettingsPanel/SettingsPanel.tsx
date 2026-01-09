@@ -1,5 +1,5 @@
 import React from 'react'
-import { FaGoogle, FaTrash } from 'react-icons/fa'
+import { FaGoogle, FaTrash, FaPlus } from 'react-icons/fa'
 import './SettingsPanel.css'
 import { CalendarAccount } from '../../types/account'
 
@@ -48,10 +48,13 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
             <h3 className="settings-section-title">Синхронизация</h3>
             {accounts.length === 0 ? (
               <button 
-                className="settings-section-button"
+                className="settings-section-button settings-section-button-primary"
                 onClick={onAddAccount}
               >
-                Добавить аккаунт
+                <span className="settings-section-button-icon">
+                  <FaPlus size={12} />
+                </span>
+                <span className="settings-section-button-text">Добавить аккаунт</span>
               </button>
             ) : (
               <>
@@ -94,10 +97,13 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
                   ))}
                 </div>
                 <button 
-                  className="settings-section-button"
+                  className="settings-section-button settings-section-button-primary"
                   onClick={onAddAccount}
                 >
-                  Добавить аккаунт
+                  <span className="settings-section-button-icon">
+                    <FaPlus size={14} />
+                  </span>
+                  <span className="settings-section-button-text">Добавить аккаунт</span>
                 </button>
               </>
             )}
