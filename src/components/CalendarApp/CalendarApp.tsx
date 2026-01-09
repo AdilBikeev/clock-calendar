@@ -28,7 +28,7 @@ import './CalendarApp.css'
 const CalendarApp: React.FC = () => {
   // Используем custom hooks для управления состоянием
   const calendar = useCalendar()
-  const { events, saveEvent, deleteEvent, addEvent } = useEvents()
+  const { events, saveEvent, deleteEvent, addEvent, updateEvent } = useEvents()
   const {
     accounts,
     connectGoogleAccount,
@@ -135,10 +135,14 @@ const CalendarApp: React.FC = () => {
       // Получаем события из всех подключенных аккаунтов
       const syncedEvents = await syncAllAccounts(timeMin, timeMax, events)
 
-      // Добавляем новые события (проверяем, чтобы не дублировать)
-      const existingEventIds = new Set(events.map((e) => e.id))
+      // Обновляем существующие события и добавляем новые
+      const existingEventsMap = new Map(events.map((e) => [e.id, e]))
       for (const event of syncedEvents) {
-        if (!existingEventIds.has(event.id)) {
+        if (existingEventsMap.has(event.id)) {
+          // Обновляем существующее событие
+          updateEvent(event)
+        } else {
+          // Добавляем новое событие
           addEvent(event)
         }
       }
@@ -147,7 +151,7 @@ const CalendarApp: React.FC = () => {
     } finally {
       setIsSyncing(false)
     }
-  }, [accounts.length, syncAllAccounts, events, calendar.currentDate, addEvent, isSyncing])
+  }, [accounts.length, syncAllAccounts, events, calendar.currentDate, addEvent, updateEvent, isSyncing])
 
   // Обработка OAuth callback через deep links
   useEffect(() => {
@@ -558,6 +562,8 @@ const CalendarApp: React.FC = () => {
         onAddAccount={handleAddAccount}
         accounts={accounts}
         onRemoveAccount={handleRemoveAccount}
+        onSync={syncGoogleEvents}
+        isSyncing={isSyncing}
       />
 
       <AccountModal

@@ -10,6 +10,8 @@ interface SettingsPanelProps {
   onAddAccount: () => void
   accounts: CalendarAccount[]
   onRemoveAccount: (accountId: string) => void
+  onSync?: () => Promise<void>
+  isSyncing?: boolean
 }
 
 const SettingsPanel: React.FC<SettingsPanelProps> = ({
@@ -18,6 +20,8 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
   onAddAccount,
   accounts,
   onRemoveAccount,
+  onSync,
+  isSyncing = false,
 }) => {
   const [accountToRemove, setAccountToRemove] = useState<CalendarAccount | null>(null)
   const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false)
@@ -47,9 +51,17 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
     setAccountToRemove(null)
   }
 
-  const handleSyncClick = () => {
-    // TODO: Реализовать логику синхронизации
-    console.log('Синхронизация запущена')
+  const handleSyncClick = async () => {
+    if (!onSync || isSyncing || accounts.length === 0) {
+      return
+    }
+    
+    try {
+      await onSync()
+    } catch (error) {
+      console.error('Ошибка синхронизации:', error)
+      alert(`Ошибка синхронизации: ${error instanceof Error ? error.message : String(error)}`)
+    }
   }
 
   const getAccountIcon = (type: string) => {
@@ -91,12 +103,13 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
             <div className="settings-section-header">
               <h3 className="settings-section-title">Синхронизация</h3>
               <button
-                className="settings-sync-button"
+                className={`settings-sync-button ${isSyncing ? 'syncing' : ''}`}
                 onClick={handleSyncClick}
+                disabled={isSyncing || accounts.length === 0 || !onSync}
                 aria-label="Синхронизировать"
-                title="Синхронизировать"
+                title={accounts.length === 0 ? 'Добавьте аккаунт для синхронизации' : isSyncing ? 'Синхронизация...' : 'Синхронизировать'}
               >
-                <FaSync size={14} />
+                <FaSync size={14} className={isSyncing ? 'spinning' : ''} />
               </button>
             </div>
             {accounts.length === 0 ? (

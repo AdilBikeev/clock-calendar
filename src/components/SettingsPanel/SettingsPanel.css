@@ -127,6 +127,33 @@
   outline-offset: 2px;
 }
 
+.settings-sync-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.settings-sync-button:disabled:hover {
+  background: transparent;
+  color: #007aff;
+}
+
+.settings-sync-button.syncing {
+  pointer-events: none;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.settings-sync-button .spinning {
+  animation: spin 1s linear infinite;
+}
+
 .settings-section-button {
   width: 100%;
   padding: 14px 16px;
