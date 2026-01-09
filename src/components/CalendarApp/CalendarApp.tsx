@@ -19,6 +19,8 @@ import { useCalendarScale } from '../../hooks/useCalendarScale'
 import { useQuickAddEvent } from '../../hooks/useQuickAddEvent'
 import { useAccounts } from '../../hooks/useAccounts'
 import { shouldUpdateCurrentDate } from '../../services/eventService'
+import { App } from '@capacitor/app'
+import { Capacitor } from '@capacitor/core'
 import 'simplebar-react/dist/simplebar.min.css'
 import './CalendarApp.css'
 
@@ -104,32 +106,84 @@ const CalendarApp: React.FC = () => {
 
   // Обработка OAuth callback
   useEffect(() => {
-    const urlParams = new URLSearchParams(window.location.search)
-    const code = urlParams.get('code')
-    const state = urlParams.get('state')
-    const error = urlParams.get('error')
+    const processOAuthCallback = (url: string) => {
+      try {
+        const urlObj = new URL(url)
+        const code = urlObj.searchParams.get('code')
+        const state = urlObj.searchParams.get('state')
+        const error = urlObj.searchParams.get('error')
 
-    if (error) {
-      // Очищаем URL параметры
-      window.history.replaceState({}, document.title, window.location.pathname)
-      return
+        if (error) {
+          return
+        }
+
+        if (code && state) {
+          // Обрабатываем OAuth callback
+          handleGoogleOAuthSuccess(code, state)
+            .then(() => {
+              // Синхронизируем события после успешного подключения
+              syncGoogleEvents()
+            })
+            .catch(() => {
+              // Ошибка обработки OAuth callback
+            })
+        }
+      } catch (error) {
+        // Ошибка парсинга URL
+      }
     }
 
-    if (code && state) {
-      // Обрабатываем OAuth callback
-      handleGoogleOAuthSuccess(code, state)
-        .then(() => {
-          // Синхронизируем события после успешного подключения
-          syncGoogleEvents()
-        })
-        .catch(() => {
-          // Ошибка обработки OAuth callback
-        })
-        .finally(() => {
-          // Очищаем URL параметры
-          window.history.replaceState({}, document.title, window.location.pathname)
-        })
+    // Для веб-приложений обрабатываем URL из window.location
+    if (!Capacitor.isNativePlatform()) {
+      const urlParams = new URLSearchParams(window.location.search)
+      const code = urlParams.get('code')
+      const state = urlParams.get('state')
+      const error = urlParams.get('error')
+
+      if (error) {
+        // Очищаем URL параметры
+        window.history.replaceState({}, document.title, window.location.pathname)
+        return
+      }
+
+      if (code && state) {
+        // Обрабатываем OAuth callback
+        handleGoogleOAuthSuccess(code, state)
+          .then(() => {
+            // Синхронизируем события после успешного подключения
+            syncGoogleEvents()
+          })
+          .catch(() => {
+            // Ошибка обработки OAuth callback
+          })
+          .finally(() => {
+            // Очищаем URL параметры
+            window.history.replaceState({}, document.title, window.location.pathname)
+          })
+      }
+    } else {
+      // Для мобильных устройств обрабатываем deep links
+      // Browser плагин открывает OAuth в нативном всплывающем окне
+      // После авторизации Google перенаправляет на промежуточную страницу
+      // Промежуточная страница делает deep link обратно в приложение
+      // Приложение получает deep link через событие appUrlOpen
+      const urlListener = App.addListener('appUrlOpen', (event) => {
+        processOAuthCallback(event.url)
+      })
+
+      // Проверяем начальный URL (если приложение было открыто через deep link)
+      App.getLaunchUrl().then((result) => {
+        if (result?.url) {
+          processOAuthCallback(result.url)
+        }
+      })
+
+      // Cleanup
+      return () => {
+        urlListener.then((l) => l.remove())
+      }
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   // Синхронизация событий из Google Calendar
@@ -247,6 +301,8 @@ const CalendarApp: React.FC = () => {
         // После возврата callback будет обработан в useEffect выше
       } catch (error) {
         // Ошибка подключения Google аккаунта
+        console.error('Ошибка подключения Google аккаунта:', error)
+        alert(`Ошибка подключения Google аккаунта: ${error instanceof Error ? error.message : String(error)}`)
       }
     }
   }

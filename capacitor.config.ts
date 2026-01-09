@@ -7,6 +7,16 @@ const config: CapacitorConfig = {
   server: {
     androidScheme: 'https',
     cleartext: true
+  },
+  plugins: {
+    App: {
+      // Настройка deep links для OAuth callback
+      // Промежуточная страница делает deep link обратно в приложение
+      deepLinking: {
+        enabled: true,
+        schemes: ['com.clockcalendar.app']
+      }
+    }
   }
 }
 

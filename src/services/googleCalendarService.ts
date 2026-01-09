@@ -6,12 +6,44 @@ import { CalendarAccount, GoogleCalendarEvent } from '../types/account'
 import { Event } from '../types/event'
 import { getAvailableColor } from '../utils/eventUtils'
 import { generatePKCEPair } from '../utils/pkceUtils'
+import { Capacitor } from '@capacitor/core'
+import { Browser } from '@capacitor/browser'
 
 // Google OAuth 2.0 Configuration
 // Эти значения нужно будет настроить в Google Cloud Console
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || ''
 const GOOGLE_CLIENT_SECRET = import.meta.env.VITE_GOOGLE_CLIENT_SECRET || '' // Опционально: для Desktop app может потребоваться
-const GOOGLE_REDIRECT_URI = import.meta.env.VITE_GOOGLE_REDIRECT_URI || `${window.location.origin}/oauth/google/callback`
+
+// Логируем для отладки (только первые символы для безопасности)
+if (GOOGLE_CLIENT_SECRET) {
+  console.log('GOOGLE_CLIENT_SECRET установлен:', GOOGLE_CLIENT_SECRET.substring(0, 5) + '...')
+} else {
+  console.warn('GOOGLE_CLIENT_SECRET не установлен. Google может требовать его для Desktop app OAuth client.')
+}
+// Определяем правильный redirect URI в зависимости от платформы
+const getRedirectUri = (): string => {
+  // Если указан явный redirect URI в переменных окружения, используем его
+  if (import.meta.env.GOOGLE_REDIRECT_URI) {
+    return import.meta.env.GOOGLE_REDIRECT_URI
+  }
+
+  // Для мобильных устройств используем промежуточную страницу
+  // Google перенаправит на эту страницу, которая сделает deep link обратно в приложение
+  // ВАЖНО: В Google Cloud Console для Desktop app OAuth client
+  // нужно добавить redirect URI: http://localhost:3000/oauth/google/callback
+  // (или ваш домен, если используете промежуточную страницу на сервере)
+  if (Capacitor.isNativePlatform()) {
+    // Используем промежуточную страницу, которая сделает deep link
+    // Промежуточная страница должна быть доступна по этому адресу
+    // Используем тот же путь, что и для веб-версии для консистентности
+    return 'http://localhost:3000/oauth/google/callback'
+  }
+
+  // Для веб-приложения используем стандартный URL
+  return `${window.location.origin}/oauth/google/callback`
+}
+
+const GOOGLE_REDIRECT_URI = getRedirectUri()
 // Scopes: календарь + профиль пользователя (для получения email и имени)
 const GOOGLE_SCOPES = 'https://www.googleapis.com/auth/calendar.readonly https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/userinfo.profile'
 const GOOGLE_AUTH_URL = 'https://accounts.google.com/o/oauth2/v2/auth'
@@ -56,7 +88,7 @@ export const exchangeCodeForTokens = async (
   // Проверяем, что client_id настроен
   if (!GOOGLE_CLIENT_ID) {
     throw new Error(
-      'VITE_GOOGLE_CLIENT_ID не настроен в .env файле. ' +
+      'GOOGLE_CLIENT_ID не настроен в .env файле. ' +
       'Пожалуйста, создайте OAuth client типа "Desktop app" в Google Cloud Console и укажите Client ID в .env файле.'
     )
   }
@@ -101,7 +133,7 @@ export const exchangeCodeForTokens = async (
           `2. Найдите ваш OAuth client (Desktop app или Web application)\n` +
           `3. Скопируйте Client Secret\n` +
           `4. Добавьте в .env файл:\n` +
-          `   VITE_GOOGLE_CLIENT_SECRET=ваш_client_secret_здесь\n` +
+          `   GOOGLE_CLIENT_SECRET=ваш_client_secret_здесь\n` +
           `5. Перезапустите сервер разработки (npm run dev)\n\n` +
           `⚠️ ВНИМАНИЕ: Client Secret будет виден в клиентском коде (небезопасно для продакшена).\n` +
           `Для продакшена рекомендуется использовать серверный прокси.\n\n` +
@@ -337,11 +369,12 @@ export const convertGoogleEventToEvent = (
 export const initiateGoogleOAuth = async (accountId: string): Promise<void> => {
   // Проверяем, что client_id настроен
   if (!GOOGLE_CLIENT_ID) {
-    throw new Error(
-      'VITE_GOOGLE_CLIENT_ID не настроен в .env файле. ' +
-      'Пожалуйста, создайте OAuth client типа "Desktop app" в Google Cloud Console и укажите Client ID в .env файле.'
-    )
+    const errorMsg = 'VITE_GOOGLE_CLIENT_ID не настроен в .env файле. Пожалуйста, создайте OAuth client типа "Desktop app" в Google Cloud Console и укажите Client ID в .env файле.'
+    console.error(errorMsg)
+    throw new Error(errorMsg)
   }
+  
+  console.log('GOOGLE_CLIENT_ID:', GOOGLE_CLIENT_ID.substring(0, 20) + '...')
 
   // Генерируем PKCE пару
   const { codeVerifier, codeChallenge } = await generatePKCEPair()
@@ -357,8 +390,30 @@ export const initiateGoogleOAuth = async (accountId: string): Promise<void> => {
   // Формируем URL авторизации с code_challenge
   const authUrl = getGoogleAuthUrl(state, codeChallenge)
   
-  // Перенаправляем пользователя на страницу авторизации Google
-  window.location.href = authUrl
+  console.log('Initiating Google OAuth:', { authUrl, isNative: Capacitor.isNativePlatform() })
+  
+  // Для мобильных устройств используем Browser плагин
+  // На Android это откроет Chrome Custom Tabs (нативное всплывающее окно)
+  // На iOS это откроет Safari View Controller (нативное всплывающее окно)
+  // После авторизации промежуточная страница сделает deep link обратно в приложение
+  if (Capacitor.isNativePlatform()) {
+    try {
+      // Открываем OAuth в нативном всплывающем окне
+      // presentationStyle: 'popover' делает окно всплывающим на iOS
+      await Browser.open({
+        url: authUrl,
+        presentationStyle: 'popover',
+        windowName: '_self'
+      })
+      console.log('Browser opened successfully')
+    } catch (error) {
+      console.error('Error opening Browser:', error)
+      throw new Error(`Не удалось открыть окно авторизации: ${error instanceof Error ? error.message : String(error)}`)
+    }
+  } else {
+    // Для веб-приложения используем стандартное перенаправление
+    window.location.href = authUrl
+  }
 }
 
 /**
