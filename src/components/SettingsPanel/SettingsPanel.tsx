@@ -1,7 +1,7 @@
-import React from 'react'
+import React, { useMemo } from 'react'
 import { FaGoogle, FaTrash, FaPlus } from 'react-icons/fa'
 import './SettingsPanel.css'
-import { CalendarAccount } from '../../types/account'
+import { CalendarAccount, AccountType } from '../../types/account'
 
 interface SettingsPanelProps {
   isOpen: boolean
@@ -18,6 +18,14 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
   accounts,
   onRemoveAccount,
 }) => {
+  const availableServices: AccountType[] = ['google']
+
+  // Проверяем, какие из доступных сервисов еще не добавлены
+  const hasAvailableServices = useMemo(() => {
+    const addedServiceTypes = new Set(accounts.map(account => account.type))
+    return availableServices.some(service => !addedServiceTypes.has(service))
+  }, [accounts, availableServices])
+
   const getAccountIcon = (type: string) => {
     switch (type) {
       case 'google':
@@ -47,15 +55,17 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
           <div className="settings-section">
             <h3 className="settings-section-title">Синхронизация</h3>
             {accounts.length === 0 ? (
-              <button 
-                className="settings-section-button settings-section-button-primary"
-                onClick={onAddAccount}
-              >
-                <span className="settings-section-button-icon">
-                  <FaPlus size={12} />
-                </span>
-                <span className="settings-section-button-text">Добавить аккаунт</span>
-              </button>
+              hasAvailableServices && (
+                <button 
+                  className="settings-section-button settings-section-button-primary"
+                  onClick={onAddAccount}
+                >
+                  <span className="settings-section-button-icon">
+                    <FaPlus size={12} />
+                  </span>
+                  <span className="settings-section-button-text">Добавить аккаунт</span>
+                </button>
+              )
             ) : (
               <>
                 <div className="settings-accounts-list">
@@ -96,15 +106,17 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
                     </div>
                   ))}
                 </div>
-                <button 
-                  className="settings-section-button settings-section-button-primary"
-                  onClick={onAddAccount}
-                >
-                  <span className="settings-section-button-icon">
-                    <FaPlus size={14} />
-                  </span>
-                  <span className="settings-section-button-text">Добавить аккаунт</span>
-                </button>
+                {hasAvailableServices && (
+                  <button 
+                    className="settings-section-button settings-section-button-primary"
+                    onClick={onAddAccount}
+                  >
+                    <span className="settings-section-button-icon">
+                      <FaPlus size={14} />
+                    </span>
+                    <span className="settings-section-button-text">Добавить аккаунт</span>
+                  </button>
+                )}
               </>
             )}
           </div>
