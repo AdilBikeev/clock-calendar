@@ -181,14 +181,15 @@
 
 @media (max-width: 768px) {
   .account-modal {
-    max-width: 100%;
-    border-radius: 16px 16px 0 0;
-    max-height: 80vh;
-    margin-top: auto;
+    max-width: calc(100% - 40px);
+    border-radius: 16px;
+    max-height: 90vh;
+    margin: 0;
   }
 
   .account-modal-overlay {
-    align-items: flex-end;
-    padding: 0;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
   }
 }
