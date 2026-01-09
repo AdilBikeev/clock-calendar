@@ -89,10 +89,6 @@ export const useCalendar = (initialDate: Date = new Date(), initialViewMode: Vie
    */
   const changeViewMode = useCallback(
     (mode: ViewMode) => {
-      if (mode === 'day') {
-        // При переключении на "День" устанавливаем текущий день
-        setCurrentDate(new Date())
-      }
       setViewMode(mode)
     },
     []
