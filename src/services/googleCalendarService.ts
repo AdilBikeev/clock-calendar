@@ -564,9 +564,26 @@ export const initiateGoogleOAuth = async (accountId: string): Promise<void> => {
           refreshToken: result.refreshToken,
           idToken: result.idToken,
           userInfo: result.userInfo,
+          expiresIn: 3600,
         }))
         
         logOAuth('Результат сохранен, ожидание обработки в CalendarApp')
+        
+        // Вызываем событие для обработки результата
+        // Это позволит CalendarApp обработать результат немедленно
+        window.dispatchEvent(new CustomEvent('google-native-auth-success', {
+          detail: {
+            state,
+            result: {
+              accessToken: result.accessToken,
+              refreshToken: result.refreshToken,
+              idToken: result.idToken,
+              userInfo: result.userInfo,
+              expiresIn: 3600,
+            }
+          }
+        }))
+        
         return
       } else {
         logOAuth('Google Sign In недоступен, используем веб-авторизацию (fallback)')

@@ -25,7 +25,15 @@ const getGoogleClientId = (): string => {
   return import.meta.env.VITE_GOOGLE_CLIENT_ID || ''
 }
 
+// ВАЖНО: Для webClientId в нативной авторизации Google требуется Web OAuth Client ID
+// Это НЕ Android OAuth Client ID!
+const getWebClientId = (): string => {
+  // Всегда используем Web OAuth Client ID для webClientId
+  return import.meta.env.VITE_GOOGLE_CLIENT_ID || ''
+}
+
 const GOOGLE_CLIENT_ID = getGoogleClientId()
+const WEB_CLIENT_ID = getWebClientId()
 
 /**
  * Логирует информацию для Android (видно в logcat)
@@ -60,8 +68,15 @@ export const configureGoogleSignIn = async (): Promise<void> => {
     return
   }
 
+  // ВАЖНО: webClientId должен быть Web OAuth Client ID, а не Android Client ID
+  if (!WEB_CLIENT_ID) {
+    const errorMsg = 'VITE_GOOGLE_CLIENT_ID (Web OAuth Client ID) не настроен. Для нативной авторизации Google требуется Web OAuth Client ID. Создайте OAuth client типа "Web application" в Google Cloud Console и укажите Client ID в .env файле как VITE_GOOGLE_CLIENT_ID.'
+    logAndroid('ОШИБКА:', errorMsg)
+    throw new Error(errorMsg)
+  }
+  
   const config = {
-    webClientId: GOOGLE_CLIENT_ID, // Web OAuth Client ID для получения idToken и serverAuthCode
+    webClientId: WEB_CLIENT_ID, // Web OAuth Client ID для получения idToken и serverAuthCode
     offlineAccess: true, // Для получения serverAuthCode (можно обменять на refresh token)
     scopes: [
       'https://www.googleapis.com/auth/calendar.readonly',
@@ -76,6 +91,8 @@ export const configureGoogleSignIn = async (): Promise<void> => {
     offlineAccess: config.offlineAccess,
     scopes: config.scopes,
   })
+  
+  logAndroid('ВАЖНО: Используется Web OAuth Client ID для webClientId (не Android Client ID)')
 
   try {
     await GoogleSignIn.configure(config)

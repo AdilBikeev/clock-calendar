@@ -228,6 +228,22 @@ const CalendarApp: React.FC = () => {
     // И проверяем результаты нативной авторизации (для Android)
     console.log('[CalendarApp] Настройка обработки OAuth callback')
     
+    // Обработчик события успешной нативной авторизации
+    const handleNativeAuthSuccess = (event: any) => {
+      const { state, result } = event.detail
+      console.log('[CalendarApp] Получено событие успешной нативной авторизации')
+      
+      // Используем фиктивный code для совместимости с handleGoogleOAuthSuccess
+      handleGoogleOAuthSuccess('native_auth', state)
+        .then(() => {
+          console.log('[CalendarApp] Нативная авторизация успешно обработана')
+          syncGoogleEvents()
+        })
+        .catch((error) => {
+          console.error('[CalendarApp] Ошибка обработки нативной авторизации:', error)
+        })
+    }
+
     // Проверяем результаты нативной авторизации для Android
     const checkNativeAuth = () => {
       if (Capacitor.getPlatform() === 'android') {
@@ -255,8 +271,15 @@ const CalendarApp: React.FC = () => {
       }
     }
     
+    // Подписываемся на событие успешной нативной авторизации
+    window.addEventListener('google-native-auth-success', handleNativeAuthSuccess)
+    
     // Проверяем нативную авторизацию при монтировании
     checkNativeAuth()
+    
+    return () => {
+      window.removeEventListener('google-native-auth-success', handleNativeAuthSuccess)
+    }
     
     // Для веб-авторизации обрабатываем deep links
     const urlListener = App.addListener('appUrlOpen', (event) => {

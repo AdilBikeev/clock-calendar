@@ -7,12 +7,12 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "cap:sync": "npx cap sync",
+    "cap:sync": "npx cap sync && node scripts/fix-capacitor-plugins.js",
     "cap:open:android": "npx cap open android",
     "cap:open:ios": "npx cap open ios",
     "cap:copy": "npx cap copy",
-    "android": "npm run build && npx cap sync && npx cap open android",
-    "ios": "npm run build && npx cap sync && npx cap open ios"
+    "android": "npm run build && npm run cap:sync && npx cap open android",
+    "ios": "npm run build && npm run cap:sync && npx cap open ios"
   },
   "dependencies": {
     "@capacitor/android": "^8.0.0",
