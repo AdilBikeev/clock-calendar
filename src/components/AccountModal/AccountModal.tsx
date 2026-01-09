@@ -32,9 +32,6 @@ const AccountModal: React.FC<AccountModalProps> = ({ isOpen, onClose, onSelectAc
           </button>
         </div>
         <div className="account-modal-content">
-          <p className="account-modal-description">
-            Выберите сервис календаря для синхронизации событий
-          </p>
           <div className="account-options">
             <button
               className="account-option"
