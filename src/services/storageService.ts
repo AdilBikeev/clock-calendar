@@ -33,10 +33,15 @@ export const loadEventsFromStorage = (): Event[] => {
         endDate = new Date(e.endDate)
       }
 
+      // Миграция: если у события нет owner, устанавливаем 'local'
+      // (все существующие события считаются созданными в приложении)
+      const owner = e.owner || 'local'
+
       return {
         ...e,
         startDate,
         endDate,
+        owner,
       }
     })
 

@@ -2,6 +2,7 @@ import { useState, useCallback } from 'react'
 import { Event } from '../types/event'
 import { ViewMode } from '../constants'
 import { getAvailableColor } from '../utils/eventUtils'
+import { generateLocalEventId } from '../utils/idUtils'
 
 /**
  * Custom hook для быстрого добавления событий
@@ -42,12 +43,13 @@ export const useQuickAddEvent = (
 
     // Создаем новое событие
     const newEvent: Event = {
-      id: `event-${Date.now()}-${Math.random()}`,
+      id: generateLocalEventId(),
       title: quickEventTitle.trim(),
       startDate: eventDate,
       endDate: endDate,
       allDay: true,
       color: availableColor,
+      owner: 'local', // События, созданные в приложении, имеют owner = 'local'
     }
 
     onAddEvent(newEvent)

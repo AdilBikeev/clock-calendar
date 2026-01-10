@@ -1,6 +1,7 @@
 import { isSameDay, startOfMonth } from 'date-fns'
 import { Event } from '../types/event'
 import { getAvailableColor } from '../utils/eventUtils'
+import { generateLocalEventId } from '../utils/idUtils'
 
 /**
  * Сервис для работы с событиями
@@ -11,15 +12,16 @@ import { getAvailableColor } from '../utils/eventUtils'
  */
 export const createEvent = (
   events: Event[],
-  eventData: Omit<Event, 'id' | 'color'>,
+  eventData: Omit<Event, 'id' | 'color' | 'owner'>,
   defaultDate: Date
 ): Event => {
   const availableColor = getAvailableColor(events, defaultDate)
 
   return {
     ...eventData,
-    id: `event-${Date.now()}-${Math.random()}`,
+    id: generateLocalEventId(),
     color: availableColor,
+    owner: 'local', // По умолчанию события создаются в приложении
   }
 }
 
@@ -71,6 +73,7 @@ export const saveEvent = (events: Event[], event: Event, defaultDate: Date): Eve
     const newEvent: Event = {
       ...event,
       color: event.color || availableColor,
+      owner: event.owner || 'local', // Если owner не указан, по умолчанию 'local'
     }
 
     return [...events, newEvent]

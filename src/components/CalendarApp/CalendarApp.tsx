@@ -48,6 +48,11 @@ const CalendarApp: React.FC = () => {
   const [isSettingsOpen, setIsSettingsOpen] = useState<boolean>(false)
   const [isAccountModalOpen, setIsAccountModalOpen] = useState<boolean>(false)
   const [isSyncing, setIsSyncing] = useState<boolean>(false)
+  const hasSyncedOnMount = useRef<boolean>(false)
+  const syncInProgressRef = useRef<boolean>(false)
+  const lastSyncedDateRef = useRef<Date | null>(null)
+  const lastSyncedAccountsCountRef = useRef<number>(0)
+  const lastSyncTimeRef = useRef<number>(0)
 
   // Refs для DOM элементов
   const calendarAppRef = useRef<HTMLDivElement>(null)
@@ -123,10 +128,16 @@ const CalendarApp: React.FC = () => {
 
   // Синхронизация событий из Google Calendar
   const syncGoogleEvents = useCallback(async () => {
-    if (accounts.length === 0 || isSyncing) {
+    const now = Date.now()
+    
+    // Проверяем через ref, чтобы избежать гонки условий
+    // Также проверяем, что прошло хотя бы 500мс с последней синхронизации
+    if (accounts.length === 0 || syncInProgressRef.current || (now - lastSyncTimeRef.current < 500)) {
       return
     }
 
+    syncInProgressRef.current = true
+    lastSyncTimeRef.current = now
     setIsSyncing(true)
     try {
       // Определяем диапазон дат для синхронизации (текущий месяц ± 1 месяц)
@@ -136,23 +147,68 @@ const CalendarApp: React.FC = () => {
       // Получаем события из всех подключенных аккаунтов
       const syncedEvents = await syncAllAccounts(timeMin, timeMax, events)
 
-      // Обновляем существующие события и добавляем новые
-      const existingEventsMap = new Map(events.map((e) => [e.id, e]))
+      // Создаем Set с ID всех синхронизированных событий из внешних источников
+      const syncedEventIds = new Set(syncedEvents.map((e) => e.id))
+      
+      // Находим все события из внешних источников (Google), которые находятся в диапазоне синхронизации
+      // Используем текущий список events для проверки
+      const externalEventsInRange = events.filter((e) => {
+        if (e.owner !== 'google') {
+          return false // Игнорируем локальные события
+        }
+        // Проверяем, попадает ли событие в диапазон синхронизации
+        const eventStart = new Date(e.startDate)
+        return eventStart >= timeMin && eventStart <= timeMax
+      })
+
+      // Удаляем события из внешних источников, которых больше нет в ответе от источника
+      // Важно: делаем это до добавления новых событий, чтобы не удалить только что добавленные
+      const eventsToDelete: string[] = []
+      for (const externalEvent of externalEventsInRange) {
+        if (!syncedEventIds.has(externalEvent.id)) {
+          // Событие больше не приходит от внешнего источника - помечаем для удаления
+          eventsToDelete.push(externalEvent.id)
+        }
+      }
+
+      // Удаляем отмеченные события
+      eventsToDelete.forEach((eventId) => {
+        deleteEvent(eventId)
+      })
+
+      // Обновляем существующие события из внешних источников и добавляем новые
+      // Важно: обновляем только события из внешних источников (owner = 'google')
+      // Локальные события не должны перезаписываться
+      const existingEventIds = new Map(events.map((e) => [e.id, e]))
       for (const event of syncedEvents) {
-        if (existingEventsMap.has(event.id)) {
-          // Обновляем существующее событие
-          updateEvent(event)
+        const existingEvent = existingEventIds.get(event.id)
+        if (existingEvent) {
+          // Событие уже существует
+          // Обновляем только если это событие из внешнего источника
+          // (чтобы не перезаписать локальные изменения)
+          if (existingEvent.owner === 'google' || existingEvent.owner === event.owner) {
+            updateEvent(event)
+          }
         } else {
-          // Добавляем новое событие
+          // Добавляем только новое событие
           addEvent(event)
         }
       }
+      
+      // Обновляем метки последней синхронизации
+      lastSyncedDateRef.current = new Date(calendar.currentDate)
+      lastSyncedAccountsCountRef.current = accounts.length
     } catch (error) {
       // Ошибка синхронизации событий Google Calendar
+      console.error('Ошибка синхронизации:', error)
     } finally {
       setIsSyncing(false)
+      // Не сбрасываем syncInProgressRef сразу, дадим небольшую задержку
+      setTimeout(() => {
+        syncInProgressRef.current = false
+      }, 500)
     }
-  }, [accounts.length, syncAllAccounts, events, calendar.currentDate, addEvent, updateEvent, isSyncing])
+  }, [accounts.length, syncAllAccounts, events, calendar.currentDate, addEvent, updateEvent])
 
   // Обработка OAuth callback через deep links
   useEffect(() => {
@@ -326,21 +382,32 @@ const CalendarApp: React.FC = () => {
     }
   }, [handleNativeAuthSuccess, checkNativeAuth])
 
-  // Автоматическая синхронизация при загрузке аккаунтов (при открытии приложения)
+  // Автоматическая синхронизация при загрузке аккаунтов и при изменении даты/аккаунтов
   useEffect(() => {
-    if (isAccountsLoaded && accounts.length > 0 && !isSyncing) {
-      syncGoogleEvents()
+    // Не синхронизируем если аккаунты еще не загружены или их нет
+    if (!isAccountsLoaded || accounts.length === 0 || syncInProgressRef.current) {
+      return
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isAccountsLoaded])
 
-  // Синхронизируем события при изменении текущей даты или подключении нового аккаунта
-  useEffect(() => {
-    if (isAccountsLoaded && accounts.length > 0 && !isSyncing) {
+    // Первая синхронизация при монтировании
+    if (!hasSyncedOnMount.current) {
+      hasSyncedOnMount.current = true
+      lastSyncedDateRef.current = new Date(calendar.currentDate)
+      lastSyncedAccountsCountRef.current = accounts.length
+      syncGoogleEvents()
+      return
+    }
+
+    // Последующие синхронизации при изменении даты или количества аккаунтов
+    const dateChanged = !lastSyncedDateRef.current || 
+      lastSyncedDateRef.current.getTime() !== calendar.currentDate.getTime()
+    const accountsCountChanged = lastSyncedAccountsCountRef.current !== accounts.length
+    
+    if (dateChanged || accountsCountChanged) {
       syncGoogleEvents()
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [calendar.currentDate, accounts.length])
+  }, [isAccountsLoaded, calendar.currentDate, accounts.length])
 
   // Обработчики событий
   const handleDayClick = (date: Date): void => {

@@ -1,3 +1,5 @@
+export type EventOwner = 'local' | 'google'
+
 export interface Event {
   id: string
   title: string
@@ -6,6 +8,7 @@ export interface Event {
   allDay: boolean
   description?: string
   color: string
+  owner: EventOwner
 }
 
 

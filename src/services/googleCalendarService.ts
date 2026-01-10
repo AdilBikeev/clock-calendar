@@ -6,6 +6,7 @@ import { CalendarAccount, GoogleCalendarEvent } from '../types/account'
 import { Event } from '../types/event'
 import { getAvailableColor } from '../utils/eventUtils'
 import { generatePKCEPair } from '../utils/pkceUtils'
+import { generateExternalEventId } from '../utils/idUtils'
 import { Capacitor } from '@capacitor/core'
 import { Browser } from '@capacitor/browser'
 import { ensureGoogleAuthForSync } from './googleSignInService'
@@ -376,7 +377,9 @@ export const convertGoogleEventToEvent = (
     : new Date(googleEvent.end.date || '')
 
   const allDay = !googleEvent.start.dateTime && !!googleEvent.start.date
-  const eventId = `google-${accountId}-${googleEvent.id}`
+  // Генерируем уникальный ID для события из внешнего источника
+  // Используем ID из Google Calendar API, который гарантированно уникален
+  const eventId = generateExternalEventId('google', accountId, googleEvent.id)
   const color = getAvailableColor(existingEvents, startDate)
 
   return {
@@ -387,6 +390,7 @@ export const convertGoogleEventToEvent = (
     allDay,
     description: googleEvent.description,
     color,
+    owner: 'google', // События из Google Calendar имеют owner = 'google'
   }
 }
 

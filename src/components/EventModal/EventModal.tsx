@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { format } from 'date-fns'
 import SimpleBar from 'simplebar-react'
 import { Event } from '../../types/event'
+import { generateLocalEventId } from '../../utils/idUtils'
 import 'simplebar-react/dist/simplebar.min.css'
 import './EventModal.css'
 
@@ -341,12 +342,13 @@ const EventModal: React.FC<EventModalProps> = ({
       }
 
       const eventData: Event = {
-        id: event?.id || `event-${Date.now()}-${Math.random()}`,
+        id: event?.id || generateLocalEventId(),
         title: title.trim(),
         startDate: start,
         endDate: end,
         allDay,
         description: description.trim() || undefined,
+        owner: event?.owner || 'local', // Сохраняем существующий owner или устанавливаем 'local' для новых событий
         color: event?.color || ''
       }
 
